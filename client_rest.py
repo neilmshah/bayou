@@ -2,6 +2,7 @@ import sys
 import requests
 import json
 import yaml
+import time
 
 
 #meetingRoom data-structure:
@@ -27,12 +28,15 @@ class Client:
 	meetingRoomData = dict()
 	serverhost = ""
 	serverport = ""
+	username = ""
 
 	def __init__(self):
 
 		self.meetingRoomData["booking_info"] = {}
 
-		self.meetingRoomData["booking_info"]["username"] = sys.argv[1]
+		self.username = sys.argv[1]
+
+		self.meetingRoomData["booking_info"]["username"] = self.username
 
 		with open("config.yaml", 'r') as stream:
 			try:
@@ -89,8 +93,20 @@ class Client:
 		print("Connecting to Server {}:{} ".format(self.serverhost,self.serverport))
 		url = "{}{}{}{}{}".format("http://",self.serverhost, ":", self.serverport, "/booking")
 		print ("url being invoked is : {}" .format(url))
+		print("meetingRoomData is {}" .format(self.meetingRoomData))
 
 		requests.post(url, data=json.dumps(self.meetingRoomData))
+
+
+	def get_reservation_status(self):
+		print("Connecting to Server {}:{} ".format(self.serverhost,self.serverport))
+
+		url = "{}{}{}{}{}{}".format("http://",self.serverhost, ":", self.serverport, "/booking/",self.username,)
+
+		response = requests.get(url)
+
+		print(response)
+
 
 
 if __name__ == '__main__':
@@ -115,3 +131,5 @@ if __name__ == '__main__':
 			break
 
 	c.send_meeting_details()
+
+	c.get_reservation_status()
