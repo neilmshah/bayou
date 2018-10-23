@@ -71,6 +71,11 @@ class BookRoom(Resource):
     def post(self):
         args = parser.parse_args()
         booking_info = args["booking_info"]
+        global id
+        id += 1
+        booking_info["id"]=id
+        booking_info["timestamp"]=time.time()
+        booking_info["booking_status"]="tentative"
         if(bookRoom(booking_info)): return 'Tentatively booked primary or alternate slot.',201
         else: return 'Booking slots unavailable.', 304
 
