@@ -71,13 +71,13 @@ class BookRoom(Resource):
     def post(self):
         args = parser.parse_args()
         booking_info = args["booking_info"]
-        if(bookRoom(booking_info)): return '',201
-        else: return 'Booking slots unavailable', 304
+        if(bookRoom(booking_info)): return 'Tentatively booked primary or alternate slot.',201
+        else: return 'Booking slots unavailable.', 304
 
 class GetBooking(Resource):
     def get(self, username):
         #TO-DO
-        
+
         return '',404
 
 api.add_resource(GetBooking, '/booking/<string:username>')
