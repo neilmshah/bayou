@@ -63,7 +63,7 @@ class Client:
 					self.serverhost = server_details['host']
 					self.serverport = server_details['port']
 
-			stream.close()
+				stream.close()
 
 			except yaml.YAMLError as exc:
 				print(exc)
@@ -86,9 +86,11 @@ class Client:
 
 
 	def send_meeting_details(self):
+		print("Connecting to Server {}:{} ".format(self.serverhost,self.serverport))
 		url = "{}{}{}{}{}".format("http://",self.serverhost, ":", self.serverport, "/booking")
 		print ("url being invoked is : {}" .format(url))
-		requests.post(url, data =json.dumps(self.meetingRoomData))
+
+		requests.post(url, data=json.dumps(self.meetingRoomData))
 
 
 if __name__ == '__main__':
