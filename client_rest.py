@@ -93,7 +93,7 @@ class Client:
 		print("Connecting to Server {}:{} ".format(self.serverhost,self.serverport))
 		url = "{}{}{}{}{}".format("http://",self.serverhost, ":", self.serverport, "/booking")
 		print ("url being invoked is : {}" .format(url))
-		print("meetingRoomData is {}" .format(self.meetingRoomData))
+		print("meetingRoomData is {}" .format(json.dumps(self.meetingRoomData)))
 
 		requests.post(url, data=json.dumps(self.meetingRoomData))
 
@@ -103,9 +103,36 @@ class Client:
 
 		url = "{}{}{}{}{}{}".format("http://",self.serverhost, ":", self.serverport, "/booking/",self.username,)
 
-		response = requests.get(url)
+		while True:
 
-		print(response)
+			r = requests.get(url)
+
+			response = json.loads(r.content)
+
+			bookings_list = response[self.username]
+
+			if len(bookings_list) > 0:
+				committed_count = 0
+				print("Room No, Booking Date, Booking Start Time, Booking Status")
+			else:
+				print("No Room bookings available for {}" .format(self.username))
+
+
+			for l in range(0,len(bookings_list)):
+
+				booking_list_item = l[i]
+
+				print ("{},{},{},{}".format(booking_list_item["room_no"], booking_list_item["booking_date"], booking_list_item["booking_start_time"], booking_list_item["booking_status"]))
+
+				if booking_list_item["booking_status"] == "Committed":
+					committed_count +=1
+
+			if len(bookings_list) == 0 or len(bookings_list) == committed_count:
+				break;
+
+			time.sleep(3)
+
+
 
 
 

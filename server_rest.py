@@ -30,7 +30,8 @@ bookings = "bookings"
 
 
 parser = reqparse.RequestParser()
-parser.add_argument("booking_info", type=dict)
+parser.add_argument("booking_info")
+
 
 def checkBooking(booking_info):
 	bookingAvail = True
@@ -70,6 +71,7 @@ def bookRoom(booking_info):
 class BookRoom(Resource):
 	def post(self):
 		args = parser.parse_args()
+		print ("args is {}" .format(args))
 		booking_info = args["booking_info"]
 		global id
 		id += 1
@@ -84,26 +86,33 @@ class BookRoom(Resource):
 class GetBooking(Resource):
 
 	def get(self, username):
-		
-		users_bookings = []
+
+		users_bookings = dict()
+		user_booking_list_item = []
 
 		for i in range(0, r.llen("bookings")):
-			users_bookings_item = []
+			users_bookings_item = {}
 
 			eachBooking = literal_eval(r.lindex("bookings", i).decode('utf-8'))
 
 			if eachBooking["user_name"] == username:
-				users_bookings_item.append(eachBooking["room_no"])
-				users_bookings_item.append(eachBooking["booking_date"])
-				users_bookings_item.append(eachBooking["start_time"])
-				users_bookings_item.append(eachBooking["booking_status"])
-				users_bookings.append(users_bookings_item)
 
-			js = json.dumps(users_bookings)
+				users_bookings_item["room_no"] = eachBooking["room_no"]
+				users_bookings_item["booking_date"] = eachBooking["booking_date"]
+				users_bookings_item["start_time"] = eachBooking["start_time"]
+				users_bookings_item["booking_status"] = eachBooking["booking_status"]
+
+				user_booking_list_item.append(users_bookings_item)
+
+		users_bookings[username] = user_booking_list_item
+
+		js = json.dumps(users_bookings)
 
 		resp = Response(js, status=200, mimetype='application/json')
 
-		return resp, 200
+		print("Response from server is {}" .format(resp))
+
+		return resp
 
 api.add_resource(GetBooking, '/booking/<string:username>')
 api.add_resource(BookRoom, '/booking')
