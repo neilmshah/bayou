@@ -1,0 +1,24 @@
+# Client Groups
+
+rest_server1_clients: [vish,shabari]
+rest_server2_clients: [priyal]
+
+rest_server1:
+    host: localhost
+    port: 3000
+
+rest_server2:
+    host: localhost
+    port: 4000
+
+default_rest_server:
+    host: localhost
+    port: 5000
+
+# GRPC Server Ports
+grpc_server1_port: 3001
+grpc_server2_port: 4001
+grpc_server3_port: 5001
+
+#Redis Server Port:
+redis_port: 6000
