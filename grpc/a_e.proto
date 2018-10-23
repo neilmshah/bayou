@@ -1,0 +1,30 @@
+//Author : Shabari Girish Ganapathy
+
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.grpc.examples.bayou";
+option java_outer_classname = "BayouAPPProto";
+option objc_class_prefix = "BAP";
+
+package bayouapp;
+
+service Bayou{
+    rpc anti_entropy (stream calendarEntry) returns (stream calendarEntry);
+
+    rpc checktest (stream test) returns (stream test);
+}
+
+message calendarEntry{
+    string messageid = 1;
+    string username = 2;
+    string romm_no = 3;
+    string b_date = 4;
+    string b_time = 5;
+    double timestamp = 6;
+    string status = 7;
+}
+
+message test{
+    int32 num = 1;
+}
