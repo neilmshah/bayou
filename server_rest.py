@@ -46,7 +46,9 @@ def checkBooking(booking_info):
 
 def bookRoom(booking_info):
 	if(checkBooking(booking_info)):
+		print("pushing to redis")
 		r.lpush("bookings",booking_info)
+		print("pushing went thru fine")
 		return True
 	else:
 		if(booking_info["alternate1_booking_date"]!="" and booking_info["alternate1_booking_date"]!=""):
@@ -92,7 +94,7 @@ class GetBooking(Resource):
 		for i in range(0, r.llen("bookings")):
 			users_bookings_item = {}
 			eachBooking = literal_eval(r.lindex("bookings", i).decode('utf-8'))
-			if eachBooking["user_name"] == username:
+			if eachBooking["username"] == username:
 				users_bookings_item["room_no"] = eachBooking["room_no"]
 				users_bookings_item["booking_date"] = eachBooking["booking_date"]
 				users_bookings_item["start_time"] = eachBooking["start_time"]

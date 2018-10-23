@@ -30,15 +30,15 @@ class Client:
 
 	def __init__(self):
 
-		self.meetingRoomData["booking_info"] = {}
+		self.meetingRoomData = {}
 		self.username = sys.argv[1]
-		self.meetingRoomData["booking_info"]["username"] = self.username
+		self.meetingRoomData["username"] = self.username
 		with open("config.yaml", 'r') as stream:
 			try:
 				configs = yaml.load(stream)
 				group1clients = configs['rest_server1_clients']
 				for i in range(0, len(group1clients)):
-					if self.meetingRoomData["booking_info"]["username"] == group1clients[i]:
+					if self.meetingRoomData["username"] == group1clients[i]:
 						server_details = configs['rest_server1']
 						self.serverhost = server_details['host']
 						self.serverport = server_details['port']
@@ -47,7 +47,7 @@ class Client:
 				if self.serverhost == "":
 					group2clients = configs['rest_server2_clients']
 					for i in range(0, len(group2clients)):
-						if self.meetingRoomData["booking_info"]["username"] == group2clients[i]:
+						if self.meetingRoomData["username"] == group2clients[i]:
 							server_details = configs['rest_server2']
 							self.serverhost = server_details['host']
 							self.serverport = server_details['port']
@@ -70,15 +70,15 @@ class Client:
 	def get_meeting_details(self,iteration):
 
 		if iteration == 1:
-			self.meetingRoomData["booking_info"]["room_no"] = str(input("Room no : "))
-			self.meetingRoomData["booking_info"]["booking_date"] = str(input("Date (mm/dd/yy) : "))
-			self.meetingRoomData["booking_info"]["start_time"] = str(input("Start Time : "))
+			self.meetingRoomData["room_no"] = str(input("Room no : "))
+			self.meetingRoomData["booking_date"] = str(input("Date (mm/dd/yy) : "))
+			self.meetingRoomData["start_time"] = str(input("Start Time : "))
 		elif iteration == 2:
-			self.meetingRoomData["booking_info"]["alternate1_booking_date"] = str(input("Date (mm/dd/yy) : "))
-			self.meetingRoomData["booking_info"]["alternate1_start_time"] = str(input("Start Time : "))
+			self.meetingRoomData["alternate1_booking_date"] = str(input("Date (mm/dd/yy) : "))
+			self.meetingRoomData["alternate1_start_time"] = str(input("Start Time : "))
 		elif iteration == 3:
-			self.meetingRoomData["booking_info"]["alternate2_booking_date"] = str(input("Date (mm/dd/yy) : "))
-			self.meetingRoomData["booking_info"]["alternate2_start_time"] = str(input("Start Time : "))
+			self.meetingRoomData["alternate2_booking_date"] = str(input("Date (mm/dd/yy) : "))
+			self.meetingRoomData["alternate2_start_time"] = str(input("Start Time : "))
 
 
 	def send_meeting_details(self):
@@ -87,12 +87,14 @@ class Client:
 		print ("url being invoked is : {}" .format(url))
 		print("meetingRoomData is {}" .format(json.dumps(self.meetingRoomData)))
 
-		requests.post(url, data=json.dumps(self.meetingRoomData))
+		#requests.post(url, data=json.dumps(self.meetingRoomData))
+		requests.post(url, data={"booking_info": json.dumps(self.meetingRoomData)})
 
 
 	def get_reservation_status(self):
 		print("Connecting to Server {}:{} ".format(self.serverhost,self.serverport))
 		url = "{}{}{}{}{}{}".format("http://",self.serverhost, ":", self.serverport, "/booking/",self.username,)
+		print("Room No\tBooking Date\tStarts\tStatus")
 		while True:
 			r = requests.get(url)
 			response = json.loads(r.content)
@@ -100,28 +102,23 @@ class Client:
 
 			if len(bookings_list) > 0:
 				committed_count = 0
-				print("Room No, Booking Date, Booking Start Time, Booking Status")
 			else:
 				print("No Room bookings available for {}" .format(self.username))
 
 			for l in range(0,len(bookings_list)):
 				booking_list_item = bookings_list[l]
-				print ("{},{},{},{}".format(booking_list_item["room_no"], booking_list_item["booking_date"], booking_list_item["booking_start_time"], booking_list_item["booking_status"]))
+				print ("{}\t{}\t{}\t{}".format(booking_list_item["room_no"], booking_list_item["booking_date"], booking_list_item["start_time"], booking_list_item["booking_status"]))
 				if booking_list_item["booking_status"] == "Committed":
 					committed_count +=1
 
 			if len(bookings_list) == 0 or len(bookings_list) == committed_count:
 				break
 
-			time.sleep(3)
-
-
-
-
+			time.sleep(5)
 
 if __name__ == '__main__':
 
-	print("Welcome to Spartan Room Booking System.")
+	print("Welcome to Spartan Library Room Booking System.")
 	if len(sys.argv) < 2 or len(sys.argv) > 2:
 		print("Usage: python3 client.py <<username>>")
 		exit()
