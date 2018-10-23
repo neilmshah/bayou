@@ -22,7 +22,7 @@ bookings = "bookings"
 	#   "alternate1_start_time": "9"
 	#   "alternate2_booking_date" : "mm-dd-yyyy"
 	#   "alternate2_start_time": "9"
-	#   "timestamp" : "00:00:00"
+	#   "timestamp" : 00000.00000
 	#   "booking_status": "Tentative/Committed"
 	#   "id": id
 	# }
@@ -46,7 +46,7 @@ def checkBooking(booking_info):
 
 def bookRoom(booking_info):
 	if(checkBooking(booking_info)):
-		r.lpush(booking_info)
+		r.lpush("bookings",booking_info)
 		return True
 	else:
 		if(booking_info["alternate1_booking_date"]!="" and booking_info["alternate1_booking_date"]!=""):
@@ -55,48 +55,44 @@ def bookRoom(booking_info):
 			booking_info["alternate1_booking_date"]=""
 			booking_info["alternate1_start_time"]=""
 			if(checkBooking(booking_info)):
-				r.lpush(booking_info)
+				print("Pushing alt1 to redis")
+				r.lpush("bookings",booking_info)
+				print("successfully alt1 pushed to redis")
 				return True
-		else:
-			if(booking_info["alternate2_booking_date"]!="" and booking_info["alternate2_booking_date"]!=""):
-				booking_info["booking_date"]=booking_info["alternate2_booking_date"]
-				booking_info["start_time"]=booking_info["alternate2_start_time"]
-				booking_info["alternate2_booking_date"]=""
-				booking_info["alternate2_start_time"]=""
-				if(checkBooking(booking_info)):
-					r.lpush(booking_info)
-					return True
+			else:
+				if(booking_info["alternate2_booking_date"]!="" and booking_info["alternate2_booking_date"]!=""):
+					booking_info["booking_date"]=booking_info["alternate2_booking_date"]
+					booking_info["start_time"]=booking_info["alternate2_start_time"]
+					booking_info["alternate2_booking_date"]=""
+					booking_info["alternate2_start_time"]=""
+					if(checkBooking(booking_info)):
+						r.lpush("bookings",booking_info)
+						return True
 	return False
 
 class BookRoom(Resource):
 	def post(self):
 		args = parser.parse_args()
-		print ("args is {}" .format(args))
-		booking_info = args["booking_info"]
+		booking_info = literal_eval(args["booking_info"])
 		global id
 		id += 1
-		print("id is {}".format(id))
-		print("booking_info is {}".format(booking_info))
 		booking_info["id"]=id
 		booking_info["timestamp"]=time.time()
 		booking_info["booking_status"]="tentative"
+		print(booking_info)
 		if(bookRoom(booking_info)): return 'Tentatively booked primary or alternate slot.',201
 		else: return 'Booking slots unavailable.', 304
+		#return '', 201
 
 class GetBooking(Resource):
 
 	def get(self, username):
-
 		users_bookings = dict()
 		user_booking_list_item = []
-
 		for i in range(0, r.llen("bookings")):
 			users_bookings_item = {}
-
 			eachBooking = literal_eval(r.lindex("bookings", i).decode('utf-8'))
-
 			if eachBooking["user_name"] == username:
-
 				users_bookings_item["room_no"] = eachBooking["room_no"]
 				users_bookings_item["booking_date"] = eachBooking["booking_date"]
 				users_bookings_item["start_time"] = eachBooking["start_time"]
@@ -105,11 +101,8 @@ class GetBooking(Resource):
 				user_booking_list_item.append(users_bookings_item)
 
 		users_bookings[username] = user_booking_list_item
-
 		js = json.dumps(users_bookings)
-
 		resp = Response(js, status=200, mimetype='application/json')
-
 		print("Response from server is {}" .format(resp))
 
 		return resp
