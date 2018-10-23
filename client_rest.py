@@ -69,30 +69,59 @@ class Client:
 
 	def get_meeting_details(self,iteration):
 
+		valid_user_data = False
 		if iteration == 1:
-			self.meetingRoomData["room_no"] = str(input("Room no : "))
-			self.meetingRoomData["booking_date"] = str(input("Date (mm/dd/yy) : "))
-			self.meetingRoomData["start_time"] = str(input("Start Time : "))
-		elif iteration == 2:
-			self.meetingRoomData["alternate1_booking_date"] = str(input("Date (mm/dd/yy) : "))
-			self.meetingRoomData["alternate1_start_time"] = str(input("Start Time : "))
-		elif iteration == 3:
-			self.meetingRoomData["alternate2_booking_date"] = str(input("Date (mm/dd/yy) : "))
-			self.meetingRoomData["alternate2_start_time"] = str(input("Start Time : "))
+			room_no = str(input("Room no : "))
 
+			if room_no != "":
+				self.meetingRoomData["room_no"] = room_no
+
+			booking_date = str(input("Date (mm/dd/yy) : "))
+
+			if booking_date != "":
+				self.meetingRoomData["booking_date"] = booking_date
+
+			start_time = str(input("Start Time : "))
+
+			if start_time != "":
+				self.meetingRoomData["start_time"] = start_time
+
+			if room_no != "" and booking_date != "" and start_time != "":
+				valid_user_data = True
+
+		elif iteration == 2:
+
+			alernative_date1 = str(input("Date (mm/dd/yy) : "))
+			if alernative_date1 != "":
+				self.meetingRoomData["alternate1_booking_date"] = alernative_date1
+
+			alernative_start_time = str(input("Start Time : "))
+
+			if alernative_start_time != "":
+				self.meetingRoomData["alternate1_start_time"] = alernative_start_time
+
+		elif iteration == 3:
+			alternate2_booking_date = str(input("Date (mm/dd/yy) : "))
+			if alternate2_booking_date != "":
+				self.meetingRoomData["alternate2_booking_date"] = alternate2_booking_date
+
+			alternate2_start_time = str(input("Start Time : "))
+			if alternate2_start_time != "":
+				self.meetingRoomData["alternate2_start_time"] = alternate2_start_time
+
+		return valid_user_data
 
 	def send_meeting_details(self):
-		print("Connecting to Server {}:{} ".format(self.serverhost,self.serverport))
 		url = "{}{}{}{}{}".format("http://",self.serverhost, ":", self.serverport, "/booking")
-		print ("url being invoked is : {}" .format(url))
-		print("meetingRoomData is {}" .format(json.dumps(self.meetingRoomData)))
 
-		#requests.post(url, data=json.dumps(self.meetingRoomData))
-		requests.post(url, data={"booking_info": json.dumps(self.meetingRoomData)})
+		response = requests.post(url, data={"booking_info": json.dumps(self.meetingRoomData)})
 
+		if response.status_code == 201:
+			print("\nSuccessfully submitted a booking request for room: {}".format(self.meetingRoomData["room_no"]))
+		else:
+			print("\nSorry! This room has already been taken. Please try a different room/time")
 
 	def get_reservation_status(self):
-		print("Connecting to Server {}:{} ".format(self.serverhost,self.serverport))
 		url = "{}{}{}{}{}{}".format("http://",self.serverhost, ":", self.serverport, "/booking/",self.username,)
 		print("Room No\tBooking Date\tStarts\tStatus")
 		while True:
@@ -103,12 +132,14 @@ class Client:
 			if len(bookings_list) > 0:
 				committed_count = 0
 			else:
-				print("No Room bookings available for {}" .format(self.username))
+				print("No bookings available for {}" .format(self.username))
 
 			for l in range(0,len(bookings_list)):
 				booking_list_item = bookings_list[l]
 				print ("{}\t{}\t{}\t{}".format(booking_list_item["room_no"], booking_list_item["booking_date"], booking_list_item["start_time"], booking_list_item["booking_status"]))
-				if booking_list_item["booking_status"] == "Committed":
+				time.sleep(0.5)
+
+				if booking_list_item["booking_status"].upper() == "COMMITTED":
 					committed_count +=1
 
 			if len(bookings_list) == 0 or len(bookings_list) == committed_count:
@@ -118,22 +149,27 @@ class Client:
 
 if __name__ == '__main__':
 
-	print("Welcome to Spartan Library Room Booking System.")
+	print("Welcome to Spartan library room booking system.")
 	if len(sys.argv) < 2 or len(sys.argv) > 2:
 		print("Usage: python3 client.py <<username>>")
 		exit()
 
 	c = Client()
 	n = 1
-	c.get_meeting_details(n)
+	if c.get_meeting_details(n):
+		while n < 3:
+			alternatives = str(input("\nDo you want to provide alternative booking times? (y/n):"))
+			if alternatives.upper() == "Y":
+				n += 1
+				c.get_meeting_details(n)
+			else:
+				break
+		c.send_meeting_details()
 
-	while n < 3:
-		alternatives = str(input("\nDo you want to provide alternative times in case the room is not available at the previously chosen time? (y/n):"))
-		if alternatives.upper() == "Y":
-			n += 1
-			c.get_meeting_details(n)
-		else:
-			break
+	else:
+		print ("\nSorry, correct data was not entered. Please retry again.")
 
-	c.send_meeting_details()
-	c.get_reservation_status()
+	choice = str(input("\nCheck your previous booking status? (y/n):"))
+
+	if choice.upper() == "Y":
+		c.get_reservation_status()
