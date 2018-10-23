@@ -6,25 +6,31 @@ import grpc
 import a_e_pb2
 import a_e_pb2_grpc
 
+import sys
+import time
+
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 _server_port = 3000
 _connection_port = 4000
 
-l = [1,2,3,4,5]
+l = [1,,3,4,5]
 
 def yield_entries():
     for i in l:
         yield a_e_pb2.test(num = i)
 
 def run_client():
-    with grpc.insecure_channel('localhost:3000') as channel:
+    global _connection_port
+
+    with grpc.insecure_channel('localhost:'+_connection_port) as channel:
         stub = a_e_pb2_grpc.BayouStub(channel)
 
         responses = stub.checktest(yield_entries())
 
         for response in responses:
-            print(response.num)
+            #print(response.num)
+            pass
 
 class BayouServer(a_e_pb2_grpc.BayouServicer):
     
@@ -65,17 +71,23 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
             yield a_e_pb2.test(num = item)
 
 
-def run_server():
+def run_server(_server_port,_connection_port):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     a_e_pb2_grpc.add_BayouServicer_to_server(BayouServer(),server)
-    server.add_insecure_port('[::]:4000')
+    server.add_insecure_port('[::]:'+_server_port)
 
     server.start()
 
-    try:
-        run_client()
-    except:
-        print("no other server")
+    while True:
+        #anti-entropy time
+        time.sleep(5)
+
+        #print(_server_port)
+
+        try:
+            run_client()
+        except:
+            print("no other server")
 
     try:
         while True:
@@ -84,5 +96,9 @@ def run_server():
         server.stop(0)
 
 if __name__ == '__main__':
-    run_server()
+
+    _server_port = str(sys.argv[1])
+    _connection_port = str(sys.argv[2])
+
+    run_server(_server_port,_connection_port)
 
