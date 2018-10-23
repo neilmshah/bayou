@@ -1,0 +1,15 @@
+one :
+ server_port : 3000
+ connection_port : [4000]
+
+ dummy_data:
+  one : [123,23102018,9,1,111]
+  two : [213,23102018,5,2,112]
+
+two :
+  server_port : 4000
+  connection_port : [3000]
+
+  dummy_data:
+    one : [123,23102018,9,2,113]
+    two : [213,23102018,11,2,114]

@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='a_e.proto',
   package='bayouapp',
   syntax='proto3',
-  serialized_pb=_b('\n\ta_e.proto\x12\x08\x62\x61youapp\"\x88\x01\n\rcalendarEntry\x12\x11\n\tmessageid\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\x12\x0f\n\x07romm_no\x18\x03 \x01(\t\x12\x0e\n\x06\x62_date\x18\x04 \x01(\t\x12\x0e\n\x06\x62_time\x18\x05 \x01(\t\x12\x11\n\ttimestamp\x18\x06 \x01(\x01\x12\x0e\n\x06status\x18\x07 \x01(\t\"\x13\n\x04test\x12\x0b\n\x03num\x18\x01 \x01(\x05\x32~\n\x05\x42\x61you\x12\x44\n\x0c\x61nti_entropy\x12\x17.bayouapp.calendarEntry\x1a\x17.bayouapp.calendarEntry(\x01\x30\x01\x12/\n\tchecktest\x12\x0e.bayouapp.test\x1a\x0e.bayouapp.test(\x01\x30\x01\x42/\n\x16io.grpc.examples.bayouB\rBayouAPPProtoP\x01\xa2\x02\x03\x42\x41Pb\x06proto3')
+  serialized_pb=_b('\n\ta_e.proto\x12\x08\x62\x61youapp\"\x88\x01\n\rcalendarEntry\x12\x11\n\tmessageid\x18\x01 \x01(\t\x12\x10\n\x08username\x18\x02 \x01(\t\x12\x0f\n\x07room_no\x18\x03 \x01(\t\x12\x0e\n\x06\x62_date\x18\x04 \x01(\t\x12\x0e\n\x06\x62_time\x18\x05 \x01(\t\x12\x11\n\ttimestamp\x18\x06 \x01(\t\x12\x0e\n\x06status\x18\x07 \x01(\t\"\x13\n\x04test\x12\x0b\n\x03num\x18\x01 \x01(\x05\x32~\n\x05\x42\x61you\x12\x44\n\x0c\x61nti_entropy\x12\x17.bayouapp.calendarEntry\x1a\x17.bayouapp.calendarEntry(\x01\x30\x01\x12/\n\tchecktest\x12\x0e.bayouapp.test\x1a\x0e.bayouapp.test(\x01\x30\x01\x42/\n\x16io.grpc.examples.bayouB\rBayouAPPProtoP\x01\xa2\x02\x03\x42\x41Pb\x06proto3')
 )
 
 
@@ -47,7 +47,7 @@ _CALENDARENTRY = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='romm_no', full_name='bayouapp.calendarEntry.romm_no', index=2,
+      name='room_no', full_name='bayouapp.calendarEntry.room_no', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -69,8 +69,8 @@ _CALENDARENTRY = _descriptor.Descriptor(
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='timestamp', full_name='bayouapp.calendarEntry.timestamp', index=5,
-      number=6, type=1, cpp_type=5, label=1,
-      has_default_value=False, default_value=float(0),
+      number=6, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
