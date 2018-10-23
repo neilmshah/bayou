@@ -67,14 +67,6 @@ def bookRoom(booking_info):
                     return True
     return False
 
-
-def getBookings(username):
-    response = []
-    for i in range(0, r.llen("bookings")):
-        eachBooking = literal_eval(r.lindex("bookings", i).decode('utf-8'))
-        if(eachBooking["username"]==username): response.append(eachBooking)
-    return response
-
 class BookRoom(Resource):
     def post(self):
         args = parser.parse_args()
@@ -84,9 +76,9 @@ class BookRoom(Resource):
 
 class GetBooking(Resource):
     def get(self, username):
-        response = getBookings(username)
-        if(len(response)!=0): return response
-        else: return '',404
+        #TO-DO
+        
+        return '',404
 
 api.add_resource(GetBooking, '/booking/<string:username>')
 api.add_resource(BookRoom, '/booking')
