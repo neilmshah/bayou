@@ -27,20 +27,21 @@ class Client:
 	serverport = 5000
 
 	def __init__(self):
-			self.meetingRoomData["username"] = sys.argv[1]
+			self.meetingRoomData["booking_info"] = {}
+			self.meetingRoomData["booking_info"]["username"] = sys.argv[1]
 
 	def get_meeting_details(self,iteration):
 
 		if iteration == 1:
-			self.meetingRoomData["room_no"] = str(input("Room no : "))
-			self.meetingRoomData["booking_date"] = str(input("Date (mm/dd/yy) : "))
-			self.meetingRoomData["start_time"] = str(input("Start Time : "))
+			self.meetingRoomData["booking_info"]["room_no"] = str(input("Room no : "))
+			self.meetingRoomData["booking_info"]["booking_date"] = str(input("Date (mm/dd/yy) : "))
+			self.meetingRoomData["booking_info"]["start_time"] = str(input("Start Time : "))
 		elif iteration == 2:
-			self.meetingRoomData["alternate1_booking_date"] = str(input("Date (mm/dd/yy) : "))
-			self.meetingRoomData["alternate1_start_time"] = str(input("Start Time : "))
+			self.meetingRoomData["booking_info"]["alternate1_booking_date"] = str(input("Date (mm/dd/yy) : "))
+			self.meetingRoomData["booking_info"]["alternate1_start_time"] = str(input("Start Time : "))
 		elif iteration == 3:
-			self.meetingRoomData["alternate2_booking_date"] = str(input("Date (mm/dd/yy) : "))
-			self.meetingRoomData["alternate2_start_time"] = str(input("Start Time : "))
+			self.meetingRoomData["booking_info"]["alternate2_booking_date"] = str(input("Date (mm/dd/yy) : "))
+			self.meetingRoomData["booking_info"]["alternate2_start_time"] = str(input("Start Time : "))
 
 
 	def print_meeting_details(self):
@@ -66,10 +67,10 @@ if __name__ == '__main__':
 	c.get_meeting_details(n)
 
 	while n < 3:
-		alternatives = str(input("Do you want to provide alternative times in case room is not available? (Y/N):"))
+		alternatives = str(input("\nDo you want to provide alternative times in case the room is not available at the previously chosen time? (y/n):"))
 
 		if alternatives.upper() == "Y":
-			n += 1
+			n += 1;
 			c.get_meeting_details(n)
 		else:
 			break
@@ -77,11 +78,3 @@ if __name__ == '__main__':
 	c.print_meeting_details()
 
 	c.send_meeting_details()
-
-
-
-
-
-
-
-
