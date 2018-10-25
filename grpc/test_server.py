@@ -8,30 +8,27 @@ from flask_restful import Resource, Api, reqparse, abort
 from ast import literal_eval
 import a_e_pb2
 import a_e_pb2_grpc
-import threading
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
-writeLog = []
-_server_port = 3000
-_connection_port = 4000
-_rest_server = 5000
+
+_server_port = 4000
+_connection_port = 3000
+_rest_server = 7000
 _redis_port = 6379
 
 n = [{"timestamp": "1122", "val": 1}, {"timestamp": "0012", "val": 2}]
+m = [{"timestamp": "1234", "val": 4}, {"timestamp": "3456", "val": 3}]
 l = [1,2,3]
-
+writeLog = []
 r = redis.StrictRedis(host='localhost', port=_redis_port, db=0)
 
 def yield_entries():
     '''for i in l:
         yield a_e_pb2.test(num = i)'''
-    for i in range(0,1):
-        yield a_e_pb2.calendarEntry(writeLog[i])
+    for i in writeLog:
+        yield a_e_pb2.calendarEntry(writeLog.pop(i))
 
 def run_client():
-    for i in range(0, 1):
-        eachBooking = eval(r.hget('booking_info', i+1))
-        writeLog.append(eachBooking)
     with grpc.insecure_channel('localhost:{}'.format(_connection_port)) as channel:
         stub = a_e_pb2_grpc.BayouStub(channel)
 
@@ -43,9 +40,8 @@ def run_client():
 
 class BayouServer(a_e_pb2_grpc.BayouServicer):
     def __init__(self):
-        global writeLog
         self.new_list = []
-        
+        self.writeLog = []
 
     def anti_entropy(self,request_iterator,context):
         for request in request_iterator:
@@ -62,7 +58,7 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
 
             self.new_list.append(calendar_entry)
 
-        '''for item in self.new_list:
+        for item in self.new_list:
 
             yield a_e_pb2.calendarEntry(messageid = item["id"],
                                         username = item["username"],
@@ -70,16 +66,8 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
                                         b_date = item["booking_date"],
                                         b_time = item["start_time"],
                                         timestamp = item["timestamp"],
-                                        status = item["booking_status"])'''
+                                        status = item["booking_status"])
         self.mergeWriteLogs()
-        for item in writeLog:
-            yield a_e_pb2.calendarEntry(messageid = item["id"],
-                                            username = item["username"],
-                                            room_no = item["room_no"],
-                                            b_date = item["booking_date"],
-                                            b_time = item["start_time"],
-                                            timestamp = item["timestamp"],
-                                            status = item["booking_status"])
 
     def checktest(self,request_iterator,context):
         global m
@@ -89,40 +77,35 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
         for request in request_iterator:
             print(request.num)
             self.new_list.append(request.num)
-        '''m += n
+        m += n
         m.sort(key=lambda x:x['timestamp'])
         for item in m:
             print("item = ",item)
         #self.new_list.sort(key=lambda x:x['timestamp'])
         for item in self.new_list:
-            yield a_e_pb2.test(num = item)'''
+            yield a_e_pb2.test(num = item)
 
     def mergeWriteLogs(self):
-        global writeLog
-        writeLog += self.new_list
-        writeLog.sort(key=lambda x:x['timestamp'])
+        self.writeLog += self.new_list
+        self.writeLog.sort(key=lambda x:x['timestamp'])
         self.executeRequests()
     
     def executeRequests(self):
-        for booking in writeLog:
-            if bookRoom(booking):
-                print('Commited: ',booking)
-                writeLog.index([booking])['booking_status'] = 'Commited'
-            else:
-                writeLog.remove(booking)
+        for booking in self.writeLog:
+            bookRoom(booking)
+
 
 def run_server():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     a_e_pb2_grpc.add_BayouServicer_to_server(BayouServer(),server)
     server.add_insecure_port('[::]:{}'.format(_server_port))
     server.start()
+    #app.run(port=_rest_server, debug=True)
+
     try:
         run_client()
     except:
         print("no other server")
-    t = threading.Thread(target=app.run(), args=(_rest_server,True))
-    t.start()
-    #app.run(port=_rest_server, debug=True)
 
     try:
         while True:
@@ -160,10 +143,8 @@ parser.add_argument('booking_info', type=dict)
 def checkBooking(booking_info):
     bookingAvail = True
 
-    for i in range(0, 1):
-        eachBooking = eval(r.hget('booking_info', i+1))
-        print(eachBooking)
-        #eachBooking = literal_eval(r.lindex("bookings", i).decode('utf-8'))
+    for i in range(0, r.llen("bookings")):
+        eachBooking = literal_eval(r.lindex("bookings", i).decode('utf-8'))
         if(eachBooking["room_no"]==booking_info["room_no"] and eachBooking["booking_date"]==booking_info["booking_date"]):
             if(eachBooking["start_time"]==booking_info["start_time"]): 
                 bookingAvail=False
@@ -172,8 +153,7 @@ def checkBooking(booking_info):
 
 def bookRoom(booking_info):
     if(checkBooking(booking_info)): 
-        #r.lpush(booking_info)
-        r.hset('booking_info', booking_info['id'], booking_info)
+        r.lpush(booking_info)
         return True
     else:
         if(booking_info["alternate1_booking_date"]!="" and booking_info["alternate1_booking_date"]!=""):
@@ -182,8 +162,7 @@ def bookRoom(booking_info):
             booking_info["alternate1_booking_date"]=""
             booking_info["alternate1_start_time"]=""
             if(checkBooking(booking_info)): 
-                #r.lpush(booking_info)
-                r.hset('booking_info', booking_info['id'], booking_info)
+                r.lpush(booking_info)
                 return True
         else:
             if(booking_info["alternate2_booking_date"]!="" and booking_info["alternate2_booking_date"]!=""):
@@ -192,8 +171,7 @@ def bookRoom(booking_info):
                 booking_info["alternate2_booking_date"]=""
                 booking_info["alternate2_start_time"]=""
                 if(checkBooking(booking_info)): 
-                    #r.lpush(booking_info)
-                    r.hset('booking_info', booking_info['id'], booking_info)
+                    r.lpush(booking_info)
                     return True
     return False
 

@@ -109,7 +109,7 @@ if __name__ == '__main__':
 		alternatives = str(input("\nDo you want to provide alternative times in case the room is not available at the previously chosen time? (y/n):"))
 
 		if alternatives.upper() == "Y":
-			n += 1;
+			n += 1
 			c.get_meeting_details(n)
 		else:
 			break
