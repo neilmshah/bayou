@@ -84,7 +84,7 @@ def does_entry_exists(id):
     
     return False
 
-def checkbooking(booking_info):
+def checkbookingae(booking_info):
     global booking_list
     bookingAvail = True
     for i in range(0,len(booking_list)):
@@ -142,7 +142,7 @@ def run_client(_connection_port):
         for response in responses:
             calendar_entry = make_new_object(response)
 
-            if checkbooking(calendar_entry):
+            if checkbookingae(calendar_entry):
                 new_list.append(calendar_entry)
 
     
@@ -166,7 +166,7 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
 
             calendar_entry = make_new_object(request)
 
-            if checkbooking(calendar_entry):
+            if checkbookingae(calendar_entry):
                 self.new_list.append(calendar_entry)
 
         booking_list += self.new_list
