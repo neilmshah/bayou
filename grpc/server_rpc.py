@@ -77,17 +77,6 @@ def yield_entry():
                                         timestamp = item["timestamp"],
                                         status = item["booking_status"])
 
-def run_client(_connection_port):
-
-    with grpc.insecure_channel('localhost:'+_connection_port) as channel:
-        stub = a_e_pb2_grpc.BayouStub(channel)
-
-        responses = stub.anti_entropy(yield_entry())
-
-        for response in responses:
-            #print(response.num)
-            pass
-
 def does_entry_exists(id):
     for item in booking_list:
         if item['id'] == id:
@@ -123,25 +112,50 @@ def checkbooking(booking_info):
 
     return bookingAvail
 
+def make_new_object(request):
+    calendar_entry = {}
+
+    calendar_entry["username"] = request.username
+    calendar_entry["room_no"] = request.room_no
+    calendar_entry["booking_date"] = request.b_date
+    calendar_entry["start_time"] = request.b_time
+    calendar_entry["alternate1_booking_date"] = request.a1_date
+    calendar_entry["alternate1_start_time"] = request.a1_time
+    calendar_entry["timestamp"] = request.timestamp
+    calendar_entry["booking_status"] = request.status
+    calendar_entry["id"] = request.messageid
+
+    return calendar_entry
+
+
+def run_client(_connection_port):
+
+    new_list = []
+
+    global booking_list
+
+    with grpc.insecure_channel('localhost:'+_connection_port) as channel:
+        stub = a_e_pb2_grpc.BayouStub(channel)
+
+        responses = stub.anti_entropy(yield_entry())
+
+        for response in responses:
+            calendar_entry = make_new_object(response)
+
+            if checkbooking(calendar_entry):
+                new_list.append(calendar_entry)
+
+    
+        booking_list += new_list
+
+        print("Response log")
+        for item in booking_list:
+            print(item["id"]+" "+item["booking_date"]+" "+item["start_time"])
+
 class BayouServer(a_e_pb2_grpc.BayouServicer):
     
     def __init__(self):
         self.new_list = []
-
-    def make_new_object(self,request):
-        calendar_entry = {}
-
-        calendar_entry["username"] = request.username
-        calendar_entry["room_no"] = request.room_no
-        calendar_entry["booking_date"] = request.b_date
-        calendar_entry["start_time"] = request.b_time
-        calendar_entry["alternate1_booking_date"] = request.a1_date
-        calendar_entry["alternate1_start_time"] = request.a1_time
-        calendar_entry["timestamp"] = request.timestamp
-        calendar_entry["booking_status"] = request.status
-        calendar_entry["id"] = request.messageid
-
-        return calendar_entry
 
 
     def anti_entropy(self,request_iterator,context):
@@ -149,40 +163,17 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
         global booking_list
 
         for request in request_iterator:
-            #print(request.messageid)
 
-            calendar_entry = self.make_new_object(request)
+            calendar_entry = make_new_object(request)
 
-            #print(calendar_entry)
-            """
-            flag = True
-            for item in booking_list:
-
-                if item['id'] == calendar_entry['id']:
-                    #print("this is called-1")
-                    flag = False
-                    break
-
-                if item['room_no'] == calendar_entry['room_no'] and item['start_time'] == calendar_entry['start_time']:
-                    if item['timestamp'] <= calendar_entry['timestamp']:
-                        #print('this is called-2')
-                        flag = False
-                        break
-                    else:
-                        #update the new values to the existing one
-                        pass
-            """
             if checkbooking(calendar_entry):
-                #print('this is called-3') 
                 self.new_list.append(calendar_entry)
 
         booking_list += self.new_list
 
-        #print(len(booking_list))
-        for item in booking_list:
-            print(item["id"]+" "+item["booking_date"]+" "+item["start_time"])
-
-        print("$$")
+        #print("Request")
+        #for item in booking_list:
+            #print(item["id"]+" "+item["booking_date"]+" "+item["start_time"])
 
         for item in booking_list:
 
@@ -215,8 +206,6 @@ def run_server(_server_port,_connection_ports):
     while True:
         #anti-entropy time
         time.sleep(5)
-
-        #print(_server_port)
 
         try:
             for connection_port in _connection_ports:
