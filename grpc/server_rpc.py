@@ -35,21 +35,22 @@ dummy_booking_date = {
     "id": "0",
     "timestamp": "10"
     }
-writeLog.append(dummy_booking_date)
+#writeLog.append(dummy_booking_date)
 r = redis.StrictRedis(host='localhost', port=_redis_port, db=0)
 
 def yield_entries():
-     for item in writeLog:
-        #print(item)
-        yield a_e_pb2.calendarEntry(messageid = item["id"],
-                                        username = item["username"],
-                                        room_no = item["room_no"],
-                                        b_date = item["booking_date"],
-                                        b_time = item["start_time"],
-                                        a1_date = item["alternate1_booking_date"],
-                                        a1_time = item["alternate1_start_time"],
-                                        timestamp = item["timestamp"],
-                                        status = item["booking_status"])
+    if len(writeLog) > 0:
+        for item in writeLog:
+            #print(item)
+            yield a_e_pb2.calendarEntry(messageid = item["id"],
+                                            username = item["username"],
+                                            room_no = item["room_no"],
+                                            b_date = item["booking_date"],
+                                            b_time = item["start_time"],
+                                            a1_date = item["alternate1_booking_date"],
+                                            a1_time = item["alternate1_start_time"],
+                                            timestamp = item["timestamp"],
+                                            status = item["booking_status"])
 
 def does_entry_exists(id):
     for item in writeLog:
@@ -106,8 +107,21 @@ def run_client(_connection_port):
 class BayouServer(a_e_pb2_grpc.BayouServicer):
     def __init__(self):
         global writeLog
+        global _connection_ports
+        threading.Thread(target=self.execute_anti_entropy, daemon=True).start()
         
-        
+    def execute_anti_entropy(self):
+        while True:
+        #anti-entropy time
+            time.sleep(5)
+
+            #print(_server_port)
+
+            try:
+                for connection_port in _connection_ports:
+                    run_client(str(connection_port))
+            except:
+                print("no other server")
 
     def anti_entropy(self,request_iterator,context):
         global writeLog
@@ -175,25 +189,30 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
                 if booking['booking_status'] == 'tentative' or booking['booking_status'] == 'shouldBeDeleted':
                     returnStat = self.executeInDB(booking)
                     if returnStat == 'committed':
-                        print('Commited: ',booking)
-                        writeLog.index([booking])['booking_status'] = 'commited'
+                        print('committed: ',booking)
+                        #writeLog.index([booking])['booking_status'] = 'committed'
                     elif returnStat == 'deleted':
                         print('Deleted: ',booking)
-                        writeLog.index([booking])['booking_status'] = 'deleted'
+                        #writeLog.index([booking])['booking_status'] = 'deleted'
                         #writeLog.remove(booking)
                     else:
                         print('Tentative: ',booking)
     
     def executeInDB(self, bookingRequest):
         global iteration
+        global writeLog
         iteration += 1
         if bookingRequest['booking_status'] == 'shouldBeDeleted':
+            idx = writeLog.index(bookingRequest)
+            writeLog[idx]['booking_status'] = 'deleted'
             bookingRequest['booking_status'] = 'deleted'
             r.lpush(redisList,bookingRequest)
             return 'deleted'
         elif iteration == 4:
             iteration = 0
-            bookingRequest['booking_status'] = 'commited'
+            idx = writeLog.index(bookingRequest)
+            writeLog[idx]['booking_status'] = 'committed'
+            bookingRequest['booking_status'] = 'committed'
             r.lpush(redisList,bookingRequest)
             return 'committed'
         return ''
@@ -206,22 +225,9 @@ def run_server(_server_port,_connection_ports,_rest_server):
     server.add_insecure_port('[::]:{}'.format(_server_port))
     server.start()
     try:
-        t = threading.Thread(target=app.run(), args=(_rest_server,True))
-        t.start()
+        threading.Thread(target=app.run(), args=(_rest_server,True), daemon=True).start()
     except:
         print('Rest server connection error: ',_rest_server)
-
-    while True:
-        #anti-entropy time
-        time.sleep(5)
-
-        #print(_server_port)
-
-        try:
-            for connection_port in _connection_ports:
-                run_client(str(connection_port))
-        except:
-            print("no other server")
 
     try:
         while True:
@@ -299,7 +305,7 @@ class BookRoom(Resource):
         booking_info = literal_eval(args["booking_info"])
         global id
         id += 1
-        booking_info["id"]=id
+        booking_info["id"]=str(id)
         booking_info["timestamp"]=str(time.time())
         booking_info["booking_status"]="tentative"
         print(booking_info)
