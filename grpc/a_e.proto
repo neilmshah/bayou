@@ -18,11 +18,15 @@ service Bayou{
 message calendarEntry{
     string messageid = 1;
     string username = 2;
-    string romm_no = 3;
+    string room_no = 3;
     string b_date = 4;
     string b_time = 5;
-    double timestamp = 6;
-    string status = 7;
+    string a1_date = 6;
+    string a1_time = 7;
+    string a2_date = 8;
+    string a2_time = 9;
+    string timestamp = 10;
+    string status = 11;
 }
 
 message test{
