@@ -346,4 +346,3 @@ if __name__ == '__main__':
     redisList = "bookings" + str(_server_port)
     run_server(_server_port,_connection_ports, _rest_server_port)
 
-

@@ -2,33 +2,22 @@
 rest_server1_clients: [vish,shabari]
 rest_server2_clients: [priyal,neil]
 
-# REST sever details
-rest_server1:
-    host: localhost
-    port: 3000
-
-rest_server2:
-    host: localhost
-    port: 4000
-
-default_rest_server:
-    host: localhost
-    port: 5000
-
-# GRPC server details
-grpc_server1:
-    host: localhost
-    port: 3001
-
-grpc_server2:
-    host: localhost
-    port: 4001
-
-grpc_server3:
-    host: localhost
-    port: 5001
-
 #Redis server details:
 redis_server:
-    host: localhost
+    hostname: localhost
     port: 6000
+
+one:
+ hostname: localhost
+ server_port : 3000
+ connection_port : [4000]
+
+two:
+  hostname: localhost
+  server_port : 4000
+  connection_port : [3000]
+
+three:
+  hostname: localhost
+  server_port: 5000
+  connection_port: [3000]
