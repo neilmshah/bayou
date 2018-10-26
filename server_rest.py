@@ -3,6 +3,8 @@ from flask_restful import Resource, Api, reqparse, abort
 import redis
 import time
 from ast import literal_eval
+import yaml
+import sys
 
 app = Flask(__name__)
 api = Api(app)
@@ -10,7 +12,9 @@ api = Api(app)
 r = redis.StrictRedis(host='localhost', port=6000, db=0)
 
 id = 0
-bookings = "bookings"
+#_server_port = 3000
+#_connection_port = 4000
+#redisList = "bookings"
 
 #meetingRoom data-structure:
 # { "booking_info": {
@@ -36,8 +40,8 @@ parser.add_argument("booking_info")
 def checkBooking(booking_info):
 	bookingAvail = True
 
-	for i in range(0, r.llen("bookings")):
-		eachBooking = literal_eval(r.lindex("bookings", i).decode('utf-8'))
+	for i in range(0, r.llen(redisList)):
+		eachBooking = literal_eval(r.lindex(redisList, i).decode('utf-8'))
 		if(eachBooking["room_no"]==booking_info["room_no"] and eachBooking["booking_date"]==booking_info["booking_date"]):
 			if(eachBooking["start_time"]==booking_info["start_time"]):
 				bookingAvail=False
@@ -46,9 +50,7 @@ def checkBooking(booking_info):
 
 def bookRoom(booking_info):
 	if(checkBooking(booking_info)):
-		print("pushing to redis")
-		r.lpush("bookings",booking_info)
-		print("pushing went thru fine")
+		r.lpush(redisList,booking_info)
 		return True
 	else:
 		if(booking_info["alternate1_booking_date"]!="" and booking_info["alternate1_booking_date"]!=""):
@@ -57,9 +59,7 @@ def bookRoom(booking_info):
 			booking_info["alternate1_booking_date"]=""
 			booking_info["alternate1_start_time"]=""
 			if(checkBooking(booking_info)):
-				print("Pushing alt1 to redis")
-				r.lpush("bookings",booking_info)
-				print("successfully alt1 pushed to redis")
+				r.lpush(redisList,booking_info)
 				return True
 			else:
 				if(booking_info["alternate2_booking_date"]!="" and booking_info["alternate2_booking_date"]!=""):
@@ -68,7 +68,7 @@ def bookRoom(booking_info):
 					booking_info["alternate2_booking_date"]=""
 					booking_info["alternate2_start_time"]=""
 					if(checkBooking(booking_info)):
-						r.lpush("bookings",booking_info)
+						r.lpush(redisList,booking_info)
 						return True
 	return False
 
@@ -91,9 +91,9 @@ class GetBooking(Resource):
 	def get(self, username):
 		users_bookings = dict()
 		user_booking_list_item = []
-		for i in range(0, r.llen("bookings")):
+		for i in range(0, r.llen(redisList)):
 			users_bookings_item = {}
-			eachBooking = literal_eval(r.lindex("bookings", i).decode('utf-8'))
+			eachBooking = literal_eval(r.lindex(redisList, i).decode('utf-8'))
 			if eachBooking["username"] == username:
 				users_bookings_item["room_no"] = eachBooking["room_no"]
 				users_bookings_item["booking_date"] = eachBooking["booking_date"]
@@ -113,4 +113,19 @@ api.add_resource(GetBooking, '/booking/<string:username>')
 api.add_resource(BookRoom, '/booking')
 
 if __name__ == '__main__':
-	app.run(port='3000', debug=True)
+
+	global _server_port
+	global _connection_port
+	global redisList
+	config_dict = yaml.load(open('config.yaml'))
+	config_dict = config_dict[str(sys.argv[1])]
+	_server_port = str(config_dict['server_port'])
+	_connection_ports = config_dict['connection_port']
+	redisList = "bookings" + str(_server_port)
+
+    #dummy_data = config_dict['dummy_data']
+    #init_dummy(dummy_data)
+
+    #run_server(_server_port,_connection_ports)
+	print("Starting server on port " + str(_server_port))
+	app.run(port=_server_port, debug=True)

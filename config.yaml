@@ -32,3 +32,15 @@ grpc_server3:
 redis_server:
     host: localhost
     port: 6000
+
+one :
+ server_port : 3000
+ connection_port : [4000]
+
+two :
+  server_port : 4000
+  connection_port : [3000]
+
+three:
+  server_port: 5000
+  connection_port: [3000]
