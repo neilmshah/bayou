@@ -9,7 +9,7 @@ import sys
 app = Flask(__name__)
 api = Api(app)
 
-r = redis.StrictRedis(host='localhost', port=6000, db=0)
+r = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 id = 0
 #_server_port = 3000

@@ -1,6 +1,8 @@
 one :
  server_port : 3000
  connection_port : [4000]
+ rest_server_port : 5000
+ primary : 1
 
  dummy_data:
   one : [123,23102018,9,23102018,10,1,111]
@@ -9,6 +11,8 @@ one :
 two :
   server_port : 4000
   connection_port : [3000]
+  rest_server_port : 6000
+  primary : 0
 
   dummy_data:
     one : [123,23102018,9,23102018,10,2,113]
