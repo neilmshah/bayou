@@ -3,6 +3,9 @@ import requests
 import json
 import yaml
 import time
+from termcolor import colored
+
+
 
 #meetingRoom data-structure:
 # { "booking_info": {
@@ -39,25 +42,25 @@ class Client:
 				group1clients = configs['rest_server1_clients']
 				for i in range(0, len(group1clients)):
 					if self.meetingRoomData["username"] == group1clients[i]:
-						server_details = configs['rest_server1']
-						self.serverhost = server_details['host']
-						self.serverport = server_details['port']
+						server_details = configs['one']
+						self.serverhost = server_details['hostname']
+						self.serverport = server_details['server_port']
 						break
 
 				if self.serverhost == "":
 					group2clients = configs['rest_server2_clients']
 					for i in range(0, len(group2clients)):
 						if self.meetingRoomData["username"] == group2clients[i]:
-							server_details = configs['rest_server2']
-							self.serverhost = server_details['host']
-							self.serverport = server_details['port']
+							server_details = configs['two']
+							self.serverhost = server_details['hostname']
+							self.serverport = server_details['server_port']
 							break
 
 				# default server or all other users
 				if self.serverhost == "":
-					server_details = configs['default_rest_server']
-					self.serverhost = server_details['host']
-					self.serverport = server_details['port']
+					server_details = configs['three']
+					self.serverhost = server_details['hostname']
+					self.serverport = server_details['server_port']
 
 				stream.close()
 
@@ -123,7 +126,7 @@ class Client:
 
 	def get_reservation_status(self):
 		url = "{}{}{}{}{}{}".format("http://",self.serverhost, ":", self.serverport, "/booking/",self.username,)
-		print("Room No\tBooking Date\tStarts\tStatus")
+		print("Room No\tBooking Date\tStarts\tEnds\tStatus")
 		while True:
 			r = requests.get(url)
 			response = json.loads(r.content)
@@ -136,8 +139,17 @@ class Client:
 
 			for l in range(0,len(bookings_list)):
 				booking_list_item = bookings_list[l]
-				print ("{}\t{}\t{}\t{}".format(booking_list_item["room_no"], booking_list_item["booking_date"], booking_list_item["start_time"], booking_list_item["booking_status"]))
-				time.sleep(0.5)
+				end_time = int(booking_list_item["start_time"])+1
+				if booking_list_item["booking_status"].upper() == "TENTATIVE":
+
+					print(colored('{}\t{}\t{}\t{}\t{}','yellow').format(booking_list_item["room_no"], booking_list_item["booking_date"], booking_list_item["start_time"], end_time, booking_list_item["booking_status"]))
+				elif booking_list_item["booking_status"].upper() == "COMMITTED":
+					print(colored('{}\t{}\t{}\t{}\t{}','green').format(booking_list_item["room_no"],booking_list_item["booking_date"], booking_list_item["start_time"], end_time, booking_list_item["booking_status"]))
+				else:
+					print(colored('{}\t{}\t{}\t{}\t{}', 'red').format(booking_list_item["room_no"],
+				        booking_list_item["booking_date"],booking_list_item["start_time"], end_time,booking_list_item["booking_status"]))
+
+				time.sleep(1)
 
 				if booking_list_item["booking_status"].upper() == "COMMITTED":
 					committed_count +=1
