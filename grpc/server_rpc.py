@@ -15,34 +15,17 @@ import threading
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 writeLog = []
-#_server_port = 3000
-#_connection_ports = 4000
-#_rest_server = 5000
 _redis_port = 6379
 redisList = ""
 primary = 0
 iteration = 0
-dummy_booking_date = {
-    "username": "abc",
-    "room_no" : "123",
-    "booking_date" : "mm-dd-yyyy",
-    "start_time": "15",
-    "alternate1_booking_date" : "mm-dd-yyyy",
-    "alternate1_start_time": "9",
-    "alternate2_booking_date" : "mm-dd-yyyy",
-    "alternate2_start_time": "9",
-    "booking_status": "tentative",
-    "id": "0",
-    "timestamp": "10"
-    }
-#writeLog.append(dummy_booking_date)
 r = redis.StrictRedis(host='localhost', port=_redis_port, db=0)
 
 def yield_entries():
     global writeLog
     if len(writeLog) > 0:
-        for item in writeLog:
-            #print(item)
+        for i in range(0,len(writeLog)):
+            item = writeLog[i]
             yield a_e_pb2.calendarEntry(messageid = item["id"],
                                             username = item["username"],
                                             room_no = item["room_no"],
@@ -50,6 +33,8 @@ def yield_entries():
                                             b_time = item["start_time"],
                                             a1_date = item["alternate1_booking_date"],
                                             a1_time = item["alternate1_start_time"],
+                                            a2_date = item["alternate2_booking_date"],
+                                            a2_time = item["alternate2_start_time"],
                                             timestamp = item["timestamp"],
                                             status = item["booking_status"])
 
@@ -61,36 +46,26 @@ def does_entry_exists(id):
     return False
 
 def checkbookingAE(booking_info):
+    if(does_entry_exists(booking_info['id'])):
+        return 'AlreadyInList'
     global writeLog
     bookingStat = 'CanBeDone'
     if len(writeLog)>0:
         for i in range(0,len(writeLog)):
             eachBooking = writeLog[i]
 
-            if(eachBooking["id"] == booking_info["id"]):
-                #print("id match")
-                # temp change for servers other than primary
-                if primary != 1:
-                    writeLog[i]['booking_status'] = booking_info['booking_status']
-                #tem change end
-                bookingStat = 'AlreadyInList'
-                break
-
-
-            if(eachBooking["room_no"]==booking_info["room_no"] and eachBooking["booking_date"]==booking_info["booking_date"]):
-                if((eachBooking["start_time"] == booking_info["start_time"]) and (eachBooking["timestamp"] <= booking_info["timestamp"]) ): 
+            if(eachBooking["room_no"]==booking_info["room_no"] and eachBooking["booking_date"]==booking_info["booking_date"] and eachBooking["start_time"] == booking_info["start_time"]):
+                if((eachBooking["timestamp"] <= booking_info["timestamp"]) ): 
                     print("start time of server list less")
                     bookingStat = 'CannotBeDone'
                     break
-                if ((eachBooking["start_time"] == booking_info["start_time"]) and (eachBooking["timestamp"] > booking_info["timestamp"]) and eachBooking['booking_status'] == 'tentative'):
+                elif ((eachBooking["timestamp"] > booking_info["timestamp"]) and eachBooking['booking_status'] == 'tentative'):
                     eachBooking['start_date'] = eachBooking["alternate1_booking_date"]
                     eachBooking['start_time'] = eachBooking["alternate1_start_time"]
                     eachBooking["alternate1_booking_date"] = ""
                     eachBooking["alternate1_start_time"] = ""
-                    writeLog[i] = eachBooking #Overwrite the existing booking info with the new updated start_date/time
-                    #writeLog.append(eachBooking)
-
-                    #del writeLog[i]
+                    writeLog[i] = eachBooking
+                    break
 
     return bookingStat
 
@@ -98,10 +73,19 @@ def run_client(_connection_port):
     with grpc.insecure_channel('localhost:{}'.format(_connection_port)) as channel:
         stub = a_e_pb2_grpc.BayouStub(channel)
 
-        responses = stub.anti_entropy(yield_entries())
-        for response in responses:
+        for response in stub.anti_entropy(yield_entries()):
             print(response)
-
+            if primary != 1:
+                #recordFound = False
+                for i in range(0,len(writeLog)):
+                    eachBooking = writeLog[i]
+                    if eachBooking["id"] == response.messageid:
+                        #recordFound = True
+                        eachBooking['booking_status'] = response.status
+                        writeLog[i] = eachBooking
+                        break
+                '''if recordFound == False:
+                    writeLog.append(response) #TODO: This cannot be done. change it if required'''
         print('$$$$$$$$$$$$$$$$$$$$$$$$$')
 	
 	
@@ -110,9 +94,11 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
     def __init__(self):
         global writeLog
         global _connection_ports
+        global iteration
         threading.Thread(target=self.execute_anti_entropy, daemon=True).start()
         
     def execute_anti_entropy(self):
+        global primary
         '''for i in range(0, r.llen(redisList)):
             eachBooking = literal_eval(r.lindex(redisList, i).decode('utf-8'))
             writeLog.append(eachBooking)'''
@@ -124,6 +110,8 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
                     run_client(str(connection_port))
             except:
                 print("no other server")
+                if primary == 1:
+                    self.executeRequests()
 
     def anti_entropy(self,request_iterator,context):
         #self.new_list = []
@@ -137,12 +125,13 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
             calendar_entry["start_time"] = request.b_time
             calendar_entry["alternate1_booking_date"] = request.a1_date
             calendar_entry["alternate1_start_time"] = request.a1_time
+            calendar_entry["alternate2_booking_date"] = request.a2_date
+            calendar_entry["alternate2_start_time"] = request.a2_time
             calendar_entry["timestamp"] = request.timestamp
             calendar_entry["booking_status"] = request.status
             calendar_entry["id"] = request.messageid
 
             bookingStat = checkbookingAE(calendar_entry)
-            print("i was called for my first booking preference")
             if bookingStat == 'AlreadyInList':
                 continue
             elif bookingStat == 'CanBeDone': #called for first preferred timestamp
@@ -155,8 +144,36 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
                     calendar_entry["alternate1_booking_date"]= ""
                     calendar_entry["alternate1_start_time"] = ""
                     alternateBookingStat = checkbookingAE(calendar_entry) #called for first preferred timestamp
-                    print("i was called for my alternate booking preference")
-                    if alternateBookingStat == 'CanBeDone':
+                    if bookingStat == 'AlreadyInList':
+                        continue
+                    elif alternateBookingStat == 'CanBeDone':
+                        #self.new_list.append(calendar_entry)
+                        writeLog.append(calendar_entry)
+                    else:
+                        if calendar_entry["alternate2_booking_date"]!= "" and calendar_entry["alternate2_start_time"]!="":
+                            calendar_entry["booking_date"] = calendar_entry["alternate2_booking_date"]
+                            calendar_entry["start_time"] = calendar_entry["alternate2_start_time"]
+                            calendar_entry["alternate2_booking_date"]= ""
+                            calendar_entry["alternate2_start_time"] = ""
+                            alternate2BookingStat = checkbookingAE(calendar_entry) #called for first preferred timestamp
+                            if bookingStat == 'AlreadyInList':
+                                continue
+                            elif alternate2BookingStat == 'CanBeDone':
+                                #self.new_list.append(calendar_entry)
+                                writeLog.append(calendar_entry)
+                            else:
+                                calendar_entry["booking_status"] = 'shouldBeDeleted'
+                                #self.new_list.append(calendar_entry)
+                                writeLog.append(calendar_entry)
+                elif calendar_entry["alternate2_booking_date"]!= "" and calendar_entry["alternate2_start_time"]!="":
+                    calendar_entry["booking_date"] = calendar_entry["alternate2_booking_date"]
+                    calendar_entry["start_time"] = calendar_entry["alternate2_start_time"]
+                    calendar_entry["alternate2_booking_date"]= ""
+                    calendar_entry["alternate2_start_time"] = ""
+                    alternate2BookingStat = checkbookingAE(calendar_entry) #called for first preferred timestamp
+                    if bookingStat == 'AlreadyInList':
+                        continue
+                    if alternate2BookingStat == 'CanBeDone':
                         #self.new_list.append(calendar_entry)
                         writeLog.append(calendar_entry)
                     else:
@@ -169,20 +186,17 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
                     writeLog.append(calendar_entry)
 
         if primary == 1: #If it's a primary server then it has to take a final decision
-            '''for item in self.new_list:
-                writeLog.append(item)'''
-            print(writeLog)
             self.sortWriteLogs()
-
-        #print("Response log")
-        #for item in writeLog:
-            #print(item["id"]+" "+item["booking_date"]+" "+item["start_time"])
         for item in writeLog:
             yield a_e_pb2.calendarEntry(messageid = item["id"],
                                             username = item["username"],
                                             room_no = item["room_no"],
                                             b_date = item["booking_date"],
                                             b_time = item["start_time"],
+                                            a1_date = item["alternate1_booking_date"],
+                                            a1_time = item["alternate1_start_time"],
+                                            a2_date = item["alternate2_booking_date"],
+                                            a2_time = item["alternate2_start_time"],
                                             timestamp = item["timestamp"],
                                             status = item["booking_status"])
     def sortWriteLogs(self):
@@ -190,36 +204,33 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
         self.executeRequests()
     
     def executeRequests(self):
-            for i in range(0,len(writeLog)):
-            #for booking in writeLog:
-                booking = writeLog[i]
-                if booking['booking_status'] == 'tentative' or booking['booking_status'] == 'shouldBeDeleted':
-                    returnStat = self.executeInDB(booking)
-                    if returnStat == 'committed':
-                        writeLog[i]['booking_status'] = 'committed'
-                    elif returnStat == 'deleted':
-                        print('Deleted: ',booking)
-                        writeLog[i]['booking_status'] = 'deleted'
-                    else:
-                        print('Tentative: ',booking)
+        global iteration
+        iteration += 1
+        for i in range(0,len(writeLog)):
+        #for booking in writeLog:
+            booking = writeLog[i]
+            if booking['booking_status'] == 'tentative' or booking['booking_status'] == 'shouldBeDeleted':
+                returnStat = self.executeInDB(booking)
+                if returnStat == 'committed':
+                    booking['booking_status'] = 'committed'
+                    writeLog[i] = booking
+                elif returnStat == 'deleted':
+                    print('Deleted: ',booking)
+                    booking['booking_status'] = 'deleted'
+                    writeLog[i] = booking
+                else:
+                    print('Tentative: ',booking)
+        if iteration == 4:
+            iteration = 0
     
     def executeInDB(self, bookingRequest):
-        global iteration
-        global writeLog
-        iteration += 1
         if bookingRequest['booking_status'] == 'shouldBeDeleted':
-            idx = writeLog.index(bookingRequest)
             bookingRequest['booking_status'] = 'deleted'
             r.lpush(redisList,bookingRequest)
             return 'deleted'
         elif iteration == 4:
-            iteration = 0
-            idx = writeLog.index(bookingRequest)
-            print('index === ',idx)
-            print(writeLog[idx])
             bookingRequest['booking_status'] = 'committed'
             r.lpush(redisList,bookingRequest)
-            print('writeLog after commit: ',writeLog)
             return 'committed'
         return ''
 
@@ -275,7 +286,6 @@ def checkBooking(booking_info):
 def bookRoom(booking_info):
     global writeLog
     if(checkBooking(booking_info)):
-        print('11 time checkBooking called')
         writeLog.append(booking_info)
         #r.lpush(redisList,booking_info)
         return True
@@ -286,7 +296,6 @@ def bookRoom(booking_info):
             booking_info["alternate1_booking_date"]=""
             booking_info["alternate1_start_time"]=""
             if(checkBooking(booking_info)):
-                print('22 time checkBooking called')
                 writeLog.append(booking_info)
                 #r.lpush(redisList,booking_info)
                 return True
@@ -297,7 +306,6 @@ def bookRoom(booking_info):
                     booking_info["alternate2_booking_date"]=""
                     booking_info["alternate2_start_time"]=""
                     if(checkBooking(booking_info)):
-                        print('33 time checkBooking called')
                         writeLog.append(booking_info)
                         #r.lpush(redisList,booking_info)
                         return True
