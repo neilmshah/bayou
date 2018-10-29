@@ -85,23 +85,26 @@ def make_new_object(request):
         return calendar_entry
 
 def run_client(_connection_port):
+    global writeLog
     with grpc.insecure_channel('localhost:{}'.format(_connection_port)) as channel:
         stub = a_e_pb2_grpc.BayouStub(channel)
 
         for response in stub.anti_entropy(yield_entries()):
-            print(response)
-            if primary != 1:
-                recordFound = False
-                for i in range(0,len(writeLog)):
-                    eachBooking = writeLog[i]
-                    if eachBooking["id"] == response.messageid:
-                        recordFound = True
-                        eachBooking['booking_status'] = response.status
-                        writeLog[i] = eachBooking
-                        break
-                if recordFound == False:
-                    calendar_entry =  make_new_object(response)
-                    writeLog.append(calendar_entry)
+            #print(response)
+            recordFound = False
+            for i in range(0,len(writeLog)):
+                eachBooking = writeLog[i]
+                if eachBooking["id"] == response.messageid:
+                    recordFound = True
+                    if primary != 1:
+                        calendar_entry = make_new_object(response)
+                        #eachBooking['booking_status'] = response.status
+                        writeLog[i] = calendar_entry
+                    break
+            if recordFound == False:
+                calendar_entry =  make_new_object(response)
+                writeLog.append(calendar_entry)
+        print(writeLog)
         print('$$$$$$$$$$$$$$$$$$$$$$$$$')
 	
 	
@@ -131,7 +134,9 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
 
     def anti_entropy(self,request_iterator,context):
         #self.new_list = []
+        global writeLog
         for request in request_iterator:
+            print("Request: ", request)
 
             calendar_entry = {}
 
@@ -216,21 +221,25 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
                                             timestamp = item["timestamp"],
                                             status = item["booking_status"])
     def sortWriteLogs(self):
+        global writeLog
         writeLog.sort(key=lambda x:x['timestamp'])
         self.executeRequests()
     
     def executeRequests(self):
+        global writeLog
         global iteration
         iteration += 1
         for i in range(0,len(writeLog)):
         #for booking in writeLog:
             booking = writeLog[i]
             if booking['booking_status'] == 'tentative' or booking['booking_status'] == 'shouldBeDeleted':
-                returnStat = self.executeInDB(booking)
-                if returnStat == 'committed':
+                #returnStat = self.executeInDB(booking)
+                #if returnStat == 'committed':
+                if booking['booking_status'] == 'tentative' and iteration == 4:
                     booking['booking_status'] = 'committed'
                     writeLog[i] = booking
-                elif returnStat == 'deleted':
+                #elif returnStat == 'deleted':
+                elif booking['booking_status'] == 'shouldBeDeleted':
                     print('Deleted: ',booking)
                     booking['booking_status'] = 'deleted'
                     writeLog[i] = booking
@@ -239,7 +248,7 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
         if iteration == 4:
             iteration = 0
     
-    def executeInDB(self, bookingRequest):
+    '''def executeInDB(self, bookingRequest):
         if bookingRequest['booking_status'] == 'shouldBeDeleted':
             bookingRequest['booking_status'] = 'deleted'
             r.lpush(redisList,bookingRequest)
@@ -248,7 +257,7 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
             bookingRequest['booking_status'] = 'committed'
             r.lpush(redisList,bookingRequest)
             return 'committed'
-        return ''
+        return '''''
 
 
 def run_server(_server_port,_connection_ports,_rest_server):
