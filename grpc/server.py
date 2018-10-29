@@ -282,12 +282,6 @@ def checkBooking(booking_info):
     global writeLog
     bookingAvail = True
 
-    for i in range(0, r.llen(redisList)):
-        eachBooking = literal_eval(r.lindex(redisList, i).decode('utf-8'))
-        if(eachBooking["room_no"]==booking_info["room_no"] and eachBooking["booking_date"]==booking_info["booking_date"]):
-            if(eachBooking["start_time"]==booking_info["start_time"]):
-                bookingAvail=False
-                return bookingAvail
     for i in range(0,len(writeLog)):
         eachBooking = writeLog[i]
         if(eachBooking["room_no"]==booking_info["room_no"] and eachBooking["booking_date"]==booking_info["booking_date"]):
