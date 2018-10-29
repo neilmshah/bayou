@@ -162,7 +162,7 @@ class Client:
 				time.sleep(1)
 
 				if booking_list_item["booking_status"].upper() == "COMMITTED" or booking_list_item["booking_status"].upper() == "DELETED":
-					committed_count +=1
+					#committed_count +=1
 
 			if len(bookings_list) == 0 or len(bookings_list) == committed_count:
 				break
