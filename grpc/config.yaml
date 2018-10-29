@@ -1,19 +1,35 @@
-one :
- server_port : 3000
- connection_port : [4000]
- rest_server_port : 5000
+# Client groups
+rest_server1_clients: [vish,shabari]
+rest_server2_clients: [priyal,neil]
+
+one:
+ hostname: localhost
+ rest_server_port: 3000
+ server_port : 3001
+ connection_port : [4001]
  primary : 1
 
  dummy_data:
   one : [123,23102018,9,23102018,10,1,111]
   two : [213,23102018,5,2,112]
 
-two :
-  server_port : 4000
-  connection_port : [3000]
-  rest_server_port : 6000
-  primary : 0
+two:
+ hostname: localhost
+ rest_server_port: 4000
+ server_port : 4001
+ connection_port : [3001]
+ primary : 0
 
-  dummy_data:
-    one : [123,23102018,9,23102018,10,2,113]
-    two : [313,23102018,11,2,114]
+ dummy_data:
+  one: [123,23102018,9,23102018,10,2,113]
+
+three:
+ hostname: localhost
+ rest_server_port: 5000
+ server_port : 5001
+ connection_port : [3001]
+ primary : 0
+
+ dummy_data:
+  one : [123,23102018,9,23102018,10,2,113]
+  two : [313,23102018,11,2,114]

@@ -1,5 +1,4 @@
 from concurrent import futures
-import time
 
 import grpc
 import redis
