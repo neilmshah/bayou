@@ -18,6 +18,7 @@ _redis_port = 6379
 redisList = ""
 primary = 0
 iteration = 0
+
 r = redis.StrictRedis(host='localhost', port=_redis_port, db=0)
 
 def yield_entries():
@@ -76,6 +77,8 @@ def make_new_object(request):
         calendar_entry["start_time"] = request.b_time
         calendar_entry["alternate1_booking_date"] = request.a1_date
         calendar_entry["alternate1_start_time"] = request.a1_time
+        calendar_entry["alternate2_booking_date"] = request.a2_date
+        calendar_entry["alternate2_start_time"] = request.a2_time
         calendar_entry["timestamp"] = request.timestamp
         calendar_entry["booking_status"] = request.status
         calendar_entry["id"] = request.messageid
