@@ -1,4 +1,5 @@
 from concurrent import futures
+import time
 
 import grpc
 import redis
@@ -68,19 +69,6 @@ def checkbookingAE(booking_info):
 
     return bookingStat
 
-def make_new_object(request):
-        calendar_entry = {}
-        calendar_entry["username"] = request.username
-        calendar_entry["room_no"] = request.room_no
-        calendar_entry["booking_date"] = request.b_date
-        calendar_entry["start_time"] = request.b_time
-        calendar_entry["alternate1_booking_date"] = request.a1_date
-        calendar_entry["alternate1_start_time"] = request.a1_time
-        calendar_entry["timestamp"] = request.timestamp
-        calendar_entry["booking_status"] = request.status
-        calendar_entry["id"] = request.messageid
-        return calendar_entry
-
 def run_client(_connection_port):
     with grpc.insecure_channel('localhost:{}'.format(_connection_port)) as channel:
         stub = a_e_pb2_grpc.BayouStub(channel)
@@ -88,17 +76,16 @@ def run_client(_connection_port):
         for response in stub.anti_entropy(yield_entries()):
             print(response)
             if primary != 1:
-                recordFound = False
+                #recordFound = False
                 for i in range(0,len(writeLog)):
                     eachBooking = writeLog[i]
                     if eachBooking["id"] == response.messageid:
-                        recordFound = True
+                        #recordFound = True
                         eachBooking['booking_status'] = response.status
                         writeLog[i] = eachBooking
                         break
-                if recordFound == False:
-                    calendar_entry =  make_new_object(response)
-                    writeLog.append(calendar_entry)
+                '''if recordFound == False:
+                    writeLog.append(response) #TODO: This cannot be done. change it if required'''
         print('$$$$$$$$$$$$$$$$$$$$$$$$$')
 	
 	
@@ -342,11 +329,9 @@ class GetBooking(Resource):
 	def get(self, username):
 		users_bookings = dict()
 		user_booking_list_item = []
-		global writeLog
-		for i in range(0, len(writeLog)):
+		for i in range(0, r.llen(redisList)):
 			users_bookings_item = {}
-			eachBooking = writeLog[i]
-			print("Got record {} from writeLog".format(eachBooking))
+			eachBooking = literal_eval(r.lindex(redisList, i).decode('utf-8'))
 			if eachBooking["username"] == username:
 				users_bookings_item["room_no"] = eachBooking["room_no"]
 				users_bookings_item["booking_date"] = eachBooking["booking_date"]
