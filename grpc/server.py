@@ -1,7 +1,7 @@
 from concurrent import futures
 
 import grpc
-import redis
+#import redis
 from flask import Flask, request, jsonify, json, Response
 from flask_restful import Resource, Api, reqparse, abort
 from ast import literal_eval
@@ -14,12 +14,12 @@ import threading
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 writeLog = []
-_redis_port = 6379
-redisList = ""
+#_redis_port = 6379
+#redisList = ""
 primary = 0
 iteration = 0
 
-r = redis.StrictRedis(host='localhost', port=_redis_port, db=0)
+#r = redis.StrictRedis(host='localhost', port=_redis_port, db=0)
 
 def yield_entries():
     global writeLog
