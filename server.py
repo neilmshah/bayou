@@ -23,9 +23,11 @@ iteration_dict = {}
 r = redis.StrictRedis(host='localhost', port=_redis_port, db=0)
 
 def getwriteLog():
+    #print(redisList)
     return literal_eval((r.get(redisList)).decode('utf-8'))
 
 def setwriteLog(writeLog):
+    #print(redisList)
     r.set(redisList,writeLog)
 
 
@@ -99,11 +101,11 @@ def make_new_object(request):
 
 def run_client(_connection_port):
     #global writeLog
-    writeLog = getwriteLog()
     with grpc.insecure_channel('localhost:{}'.format(_connection_port)) as channel:
         stub = a_e_pb2_grpc.BayouStub(channel)
 
         for response in stub.anti_entropy(yield_entries()):
+            writeLog = getwriteLog()
             print("Anti-Entropy resonse", response)
             recordFound = False
             for i in range(0,len(writeLog)):
@@ -118,7 +120,7 @@ def run_client(_connection_port):
             if recordFound == False:
                 calendar_entry =  make_new_object(response)
                 writeLog.append(calendar_entry)
-        setwriteLog(writeLog)
+            setwriteLog(writeLog)
         #print(writeLog)
         #print('$$$$$$$$$$$$$$$$$$$$$$$$$')
 	
@@ -138,7 +140,7 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
             writeLog.append(eachBooking)'''
         while True:
             #print('goin to sleep')
-            time.sleep(5)
+            time.sleep(8)
             try:
                 for connection_port in _connection_ports:
                     run_client(str(connection_port))
@@ -259,7 +261,7 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
                 #returnStat = self.executeInDB(booking)
                 #if returnStat == 'committed':
                 #if booking['booking_status'] == 'tentative' and iteration == 4:
-                if booking['booking_status'] == 'tentative' and iteration_dict[messageId] == 4:
+                if booking['booking_status'] == 'tentative' and iteration_dict[messageId] == 2:
                     booking['booking_status'] = 'committed'
                     writeLog[i] = booking
                 #elif returnStat == 'deleted':
@@ -361,6 +363,9 @@ def bookRoom(booking_info):
                         setwriteLog(writeLog)
                         #r.lpush(redisList,booking_info)
                         return True
+    booking_info["booking_status"]="deleted"
+    writeLog.append(booking_info)
+    setwriteLog(writeLog)
     return False
 
 class BookRoom(Resource):
@@ -368,8 +373,9 @@ class BookRoom(Resource):
         args = parser.parse_args()
         booking_info = literal_eval(args["booking_info"])
         global id
+        global _server_port
         id += 1
-        booking_info["id"]=str(id) + str(sys.argv[1])
+        booking_info["id"]= _server_port + str(id) 
         booking_info["timestamp"]=str(time.time())
         booking_info["booking_status"]="tentative"
         print("POST REQUEST: ", booking_info)
@@ -387,6 +393,7 @@ class GetBooking(Resource):
             eachBooking = writeLog[i]
             #print("Got record {} from writeLog".format(eachBooking))
             if eachBooking["username"] == username:
+                users_bookings_item["id"] = eachBooking["id"]
                 users_bookings_item["room_no"] = eachBooking["room_no"]
                 users_bookings_item["booking_date"] = eachBooking["booking_date"]
                 users_bookings_item["start_time"] = eachBooking["start_time"]

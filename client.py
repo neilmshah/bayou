@@ -82,7 +82,7 @@ class Client:
 			if booking_date != "":
 				self.meetingRoomData["booking_date"] = booking_date
 
-			start_time = str(input("Start Time : "))
+			start_time = str(input("Start Time(24hrs) : "))
 
 			if start_time != "":
 				self.meetingRoomData["start_time"] = start_time
@@ -98,7 +98,7 @@ class Client:
 				if alernative_date1 != "":
 					self.meetingRoomData["alternate1_booking_date"] = alernative_date1
 
-				alernative_start_time = str(input("Start Time : "))
+				alernative_start_time = str(input("Start Time(24hrs) : "))
 
 				if alernative_start_time != "":
 					self.meetingRoomData["alternate1_start_time"] = alernative_start_time
@@ -112,7 +112,7 @@ class Client:
 				if alternate2_booking_date != "":
 					self.meetingRoomData["alternate2_booking_date"] = alternate2_booking_date
 
-				alternate2_start_time = str(input("Start Time : "))
+				alternate2_start_time = str(input("Start Time(24hrs) : "))
 				if alternate2_start_time != "":
 					self.meetingRoomData["alternate2_start_time"] = alternate2_start_time
 			else:
@@ -130,13 +130,13 @@ class Client:
 			print("Error connecting to server. Please retry again later.")
 
 		if response.status_code == 201:
-			print("\nSuccessfully submitted a booking request for room: {}".format(self.meetingRoomData["room_no"]))
+			print(colored("\nSuccessfully submitted a booking request for room: {}",'green').format(self.meetingRoomData["room_no"]))
 		else:
-			print("\nSorry! This room has already been taken. Please try a different room/time")
+			print(colored("\nSorry! This room has already been taken. Please try a different room/time",'red'))
 
 	def get_reservation_status(self):
 		url = "{}{}{}{}{}{}".format("http://",self.serverhost, ":", self.serverport, "/booking/",self.username,)
-		print("Room\tDate\tStarts\tEnds\tStatus")
+		print("ReqID\tRoom\tDate\tStarts\tEnds\tStatus")
 		while True:
 			r = requests.get(url)
 			response = json.loads(r.content)
@@ -152,14 +152,14 @@ class Client:
 				end_time = int(booking_list_item["start_time"])+1
 				if booking_list_item["booking_status"].upper() == "TENTATIVE":
 
-					print(colored('{}\t{}\t{}\t{}\t{}','yellow').format(booking_list_item["room_no"], booking_list_item["booking_date"], booking_list_item["start_time"], end_time, booking_list_item["booking_status"]))
+					print(colored('{}\t{}\t{}\t{}\t{}\t{}','yellow').format(booking_list_item["id"],booking_list_item["room_no"], booking_list_item["booking_date"], booking_list_item["start_time"], end_time, booking_list_item["booking_status"]))
 				elif booking_list_item["booking_status"].upper() == "COMMITTED":
-					print(colored('{}\t{}\t{}\t{}\t{}','green').format(booking_list_item["room_no"],booking_list_item["booking_date"], booking_list_item["start_time"], end_time, booking_list_item["booking_status"]))
+					print(colored('{}\t{}\t{}\t{}\t{}\t{}','green').format(booking_list_item["id"], booking_list_item["room_no"],booking_list_item["booking_date"], booking_list_item["start_time"], end_time, booking_list_item["booking_status"]))
 				else:
-					print(colored('{}\t{}\t{}\t{}\t{}', 'red').format(booking_list_item["room_no"],
+					print(colored('{}\t{}\t{}\t{}\t{}\t{}', 'red').format(booking_list_item["id"], booking_list_item["room_no"],
 				        booking_list_item["booking_date"],booking_list_item["start_time"], end_time,booking_list_item["booking_status"]))
 
-				time.sleep(1)
+				time.sleep(0.5)
 
 				#if booking_list_item["booking_status"].upper() == "COMMITTED" or booking_list_item["booking_status"].upper() == "DELETED":
 					#committed_count +=1
