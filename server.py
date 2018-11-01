@@ -104,7 +104,7 @@ def run_client(_connection_port):
         stub = a_e_pb2_grpc.BayouStub(channel)
 
         for response in stub.anti_entropy(yield_entries()):
-            #print(response)
+            print("Anti-Entropy resonse", response)
             recordFound = False
             for i in range(0,len(writeLog)):
                 eachBooking = writeLog[i]
@@ -286,7 +286,10 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
 
 
 def run_server(_server_port,_connection_ports,_rest_server):
-    print('Ports: {}, {}, {}'.format(_server_port,_connection_ports,_rest_server))
+    #print('Ports: {}, {}, {}'.format(_server_port,_connection_ports,_rest_server))
+    print('REST Port:{}'.format(_rest_server))
+    print('gRPC Post:{}'.format(_server_port))
+    print('Connected to Ports:{}'.format(_connection_ports))
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     a_e_pb2_grpc.add_BayouServicer_to_server(BayouServer(),server)
     server.add_insecure_port('[::]:{}'.format(_server_port))
