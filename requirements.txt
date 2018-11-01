@@ -1,0 +1,7 @@
+flask-restful==0.3.6
+grpcio
+flask
+redis
+yaml
+json
+termcolor
