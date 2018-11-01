@@ -68,18 +68,34 @@ def checkbookingAE(booking_info):
         for i in range(0,len(writeLog)):
             eachBooking = writeLog[i]
 
+            #print('----------------------------------')
+            #print('MyData: :::: ', eachBooking)
+            #print('booking_info: :::: ', booking_info)
+            #print('----------------------------------')
             if(eachBooking["room_no"]==booking_info["room_no"] and eachBooking["booking_date"]==booking_info["booking_date"] and eachBooking["start_time"] == booking_info["start_time"]):
-                if((eachBooking["timestamp"] <= booking_info["timestamp"]) ): 
-                    #print("start time of server list less")
+                if((eachBooking["timestamp"] <= booking_info["timestamp"]) or (eachBooking['booking_status'] == 'committed')): 
+                    print("start time of server list less")
                     bookingStat = 'CannotBeDone'
                     break
                 elif ((eachBooking["timestamp"] > booking_info["timestamp"]) and eachBooking['booking_status'] == 'tentative'):
-                    eachBooking['start_date'] = eachBooking["alternate1_booking_date"]
-                    eachBooking['start_time'] = eachBooking["alternate1_start_time"]
-                    eachBooking["alternate1_booking_date"] = ""
-                    eachBooking["alternate1_start_time"] = ""
-                    writeLog[i] = eachBooking
-                    setwriteLog(writeLog)
+                    if eachBooking["alternate1_booking_date"] != "" and eachBooking["alternate1_start_time"] != "":
+                        eachBooking['start_date'] = eachBooking["alternate1_booking_date"]
+                        eachBooking['start_time'] = eachBooking["alternate1_start_time"]
+                        eachBooking["alternate1_booking_date"] = ""
+                        eachBooking["alternate1_start_time"] = ""
+                        writeLog[i] = eachBooking
+                        setwriteLog(writeLog)
+                    elif eachBooking["alternate2_booking_date"] != "" and eachBooking["alternate2_start_time"] != "":
+                        eachBooking['start_date'] = eachBooking["alternate2_booking_date"]
+                        eachBooking['start_time'] = eachBooking["alternate2_start_time"]
+                        eachBooking["alternate2_booking_date"] = ""
+                        eachBooking["alternate2_start_time"] = ""
+                        writeLog[i] = eachBooking
+                        setwriteLog(writeLog)
+                    else:
+                        eachBooking['booking_status'] = 'shouldBeDeleted'
+                        writeLog[i] = eachBooking
+                        setwriteLog(writeLog)
                     break
 
     return bookingStat
@@ -101,12 +117,15 @@ def make_new_object(request):
 
 def run_client(_connection_port):
     #global writeLog
+    writeLog = getwriteLog()
+    anythingChanged = False
     with grpc.insecure_channel('localhost:{}'.format(_connection_port)) as channel:
         stub = a_e_pb2_grpc.BayouStub(channel)
 
         for response in stub.anti_entropy(yield_entries()):
-            writeLog = getwriteLog()
-            print("Anti-Entropy resonse", response)
+            #print(response)
+            if primary == 1:
+                continue
             recordFound = False
             for i in range(0,len(writeLog)):
                 eachBooking = writeLog[i]
@@ -116,10 +135,13 @@ def run_client(_connection_port):
                         calendar_entry = make_new_object(response)
                         #eachBooking['booking_status'] = response.status
                         writeLog[i] = calendar_entry
+                        anythingChanged = True
                     break
             if recordFound == False:
                 calendar_entry =  make_new_object(response)
                 writeLog.append(calendar_entry)
+                anythingChanged = True
+        if anythingChanged == True:
             setwriteLog(writeLog)
         #print(writeLog)
         #print('$$$$$$$$$$$$$$$$$$$$$$$$$')
@@ -139,13 +161,13 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
             eachBooking = literal_eval(r.lindex(redisList, i).decode('utf-8'))
             writeLog.append(eachBooking)'''
         while True:
-            #print('goin to sleep')
+            print('goin to sleep')
             time.sleep(8)
             try:
                 for connection_port in _connection_ports:
                     run_client(str(connection_port))
             except:
-                #print("no other server")
+                print("no other server")
                 if primary == 1:
                     self.executeRequests()
 
@@ -175,7 +197,9 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
                 continue
             elif bookingStat == 'CanBeDone': #called for first preferred timestamp
                 #self.new_list.append(calendar_entry)
+                writeLog = getwriteLog()
                 writeLog.append(calendar_entry)
+                setwriteLog(writeLog)
             else: # check for alternate booking prefernce
                 if calendar_entry["alternate1_booking_date"]!= "" and calendar_entry["alternate1_start_time"]!="":
                     calendar_entry["booking_date"] = calendar_entry["alternate1_booking_date"]
@@ -187,7 +211,9 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
                         continue
                     elif alternateBookingStat == 'CanBeDone':
                         #self.new_list.append(calendar_entry)
+                        writeLog = getwriteLog()
                         writeLog.append(calendar_entry)
+                        setwriteLog(writeLog)
                     else:
                         if calendar_entry["alternate2_booking_date"]!= "" and calendar_entry["alternate2_start_time"]!="":
                             calendar_entry["booking_date"] = calendar_entry["alternate2_booking_date"]
@@ -199,11 +225,15 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
                                 continue
                             elif alternate2BookingStat == 'CanBeDone':
                                 #self.new_list.append(calendar_entry)
+                                writeLog = getwriteLog()
                                 writeLog.append(calendar_entry)
+                                setwriteLog(writeLog)
                             else:
                                 calendar_entry["booking_status"] = 'shouldBeDeleted'
                                 #self.new_list.append(calendar_entry)
+                                writeLog = getwriteLog()
                                 writeLog.append(calendar_entry)
+                                setwriteLog(writeLog)
                 elif calendar_entry["alternate2_booking_date"]!= "" and calendar_entry["alternate2_start_time"]!="":
                     calendar_entry["booking_date"] = calendar_entry["alternate2_booking_date"]
                     calendar_entry["start_time"] = calendar_entry["alternate2_start_time"]
@@ -214,16 +244,22 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
                         continue
                     if alternate2BookingStat == 'CanBeDone':
                         #self.new_list.append(calendar_entry)
+                        writeLog = getwriteLog()
                         writeLog.append(calendar_entry)
+                        setwriteLog(writeLog)
                     else:
                         calendar_entry["booking_status"] = 'shouldBeDeleted'
                         #self.new_list.append(calendar_entry)
+                        writeLog = getwriteLog()
                         writeLog.append(calendar_entry)
+                        setwriteLog(writeLog)
                 else:
                     calendar_entry["booking_status"] = 'shouldBeDeleted'
                     #self.new_list.append(calendar_entry)
+                    writeLog = getwriteLog()
                     writeLog.append(calendar_entry)
-        setwriteLog(writeLog)
+                    setwriteLog(writeLog)
+        #setwriteLog(writeLog)
         if primary == 1: #If it's a primary server then it has to take a final decision
             self.sortWriteLogs()
         for item in writeLog:
