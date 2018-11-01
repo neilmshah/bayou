@@ -9,10 +9,6 @@ one:
  connection_port : [4001]
  primary : 1
 
- dummy_data:
-  one : [123,23102018,9,23102018,10,1,111]
-  two : [213,23102018,5,2,112]
-
 two:
  hostname: localhost
  rest_server_port: 4000
@@ -20,16 +16,10 @@ two:
  connection_port : [3001]
  primary : 0
 
- dummy_data:
-  one: [123,23102018,9,23102018,10,2,113]
 
 three:
  hostname: localhost
  rest_server_port: 5000
  server_port : 5001
- connection_port : [3001,4001]
+ connection_port : [4001]
  primary : 0
-
- dummy_data:
-  one : [123,23102018,9,23102018,10,2,113]
-  two : [313,23102018,11,2,114]
