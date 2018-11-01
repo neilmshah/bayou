@@ -123,7 +123,7 @@ def run_client(_connection_port):
         stub = a_e_pb2_grpc.BayouStub(channel)
 
         for response in stub.anti_entropy(yield_entries()):
-            #print(response)
+            print("Anti-Entropy Response:\n",response)
             if primary == 1:
                 continue
             recordFound = False
@@ -161,13 +161,13 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
             eachBooking = literal_eval(r.lindex(redisList, i).decode('utf-8'))
             writeLog.append(eachBooking)'''
         while True:
-            print('goin to sleep')
+            #print('goin to sleep')
             time.sleep(8)
             try:
                 for connection_port in _connection_ports:
                     run_client(str(connection_port))
             except:
-                print("no other server")
+                #print("no other server")
                 if primary == 1:
                     self.executeRequests()
 
