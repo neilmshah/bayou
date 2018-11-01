@@ -17,7 +17,8 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 _redis_port = 6379
 redisList = ""
 primary = 0
-iteration = 0
+#iteration = 0
+iteration_dict = {}
 
 r = redis.StrictRedis(host='localhost', port=_redis_port, db=0)
 
@@ -118,8 +119,8 @@ def run_client(_connection_port):
                 calendar_entry =  make_new_object(response)
                 writeLog.append(calendar_entry)
         setwriteLog(writeLog)
-        print(writeLog)
-        print('$$$$$$$$$$$$$$$$$$$$$$$$$')
+        #print(writeLog)
+        #print('$$$$$$$$$$$$$$$$$$$$$$$$$')
 	
 	
 
@@ -127,7 +128,7 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
     def __init__(self):
         #global writeLog
         global _connection_ports
-        global iteration
+        #global iteration
         threading.Thread(target=self.execute_anti_entropy, daemon=True).start()
         
     def execute_anti_entropy(self):
@@ -245,15 +246,20 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
     def executeRequests(self):
         #global writeLog
         writeLog = getwriteLog()
-        global iteration
-        iteration += 1
-        for i in range(0,len(writeLog)):
-        #for booking in writeLog:
+        #global iteration
+        global iteration_dict
+        #iteration += 1
+        for i in range(0,len(writeLog)): 
             booking = writeLog[i]
+            messageId = booking['id']
+            if messageId not in iteration_dict.keys():
+                    iteration_dict[messageId] = 0
+            iteration_dict[messageId] += 1
             if booking['booking_status'] == 'tentative' or booking['booking_status'] == 'shouldBeDeleted':
                 #returnStat = self.executeInDB(booking)
                 #if returnStat == 'committed':
-                if booking['booking_status'] == 'tentative' and iteration == 4:
+                #if booking['booking_status'] == 'tentative' and iteration == 4:
+                if booking['booking_status'] == 'tentative' and iteration_dict[messageId] == 4:
                     booking['booking_status'] = 'committed'
                     writeLog[i] = booking
                 #elif returnStat == 'deleted':
@@ -264,8 +270,8 @@ class BayouServer(a_e_pb2_grpc.BayouServicer):
                 else:
                     print('Tentative: ',booking)
             setwriteLog(writeLog)
-        if iteration == 4:
-            iteration = 0
+        #if iteration == 4:
+        #    iteration = 0
     
     '''def executeInDB(self, bookingRequest):
         if bookingRequest['booking_status'] == 'shouldBeDeleted':
