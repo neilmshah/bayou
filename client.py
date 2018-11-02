@@ -136,7 +136,7 @@ class Client:
 
 	def get_reservation_status(self):
 		url = "{}{}{}{}{}{}".format("http://",self.serverhost, ":", self.serverport, "/booking/",self.username,)
-		print("ReqID\tRoom\tDate\tStarts\tEnds\tStatus")
+		print("ReqID\tRoom\tDate\t\tStarts\tEnds\tStatus")
 		while True:
 			r = requests.get(url)
 			response = json.loads(r.content)
