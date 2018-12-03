@@ -6,7 +6,7 @@ A prototype for replicated, eventually consistent storage system design implemen
 ### Link to research paper on which the prototype is based
 http://www.scs.stanford.edu/17au-cs244b/sched/readings/bayou.pdf
 
-### Screenshots of usage
+## Screenshots of usage
 
 
 ## Usage
@@ -25,7 +25,7 @@ http://www.scs.stanford.edu/17au-cs244b/sched/readings/bayou.pdf
 Check congig.yaml to see/set configuration for clients and severs
 
 #### Create proto files
- ```python
+ ```
  python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. a_e.proto
  ```
  
