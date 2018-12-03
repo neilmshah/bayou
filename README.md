@@ -3,7 +3,7 @@ A prototype for replicated, eventually consistent storage system design implemen
 #### Team Members: Neil Shah, Shabari Girish, Vishwanath Manvi, Priyal Agrawal
 
 
-### Link to research paper on which the prototype is based
+## Link to research paper on which the prototype is based
 http://www.scs.stanford.edu/17au-cs244b/sched/readings/bayou.pdf
 
 ## Screenshots of usage
@@ -29,7 +29,7 @@ Check congig.yaml to see/set configuration for clients and severs
  python3 -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. a_e.proto
  ```
  
- #### Start server nodes in seperate terminals
+ #### Start server nodes (one terminal per server)
  ```python
  python3 server.py 3000
  python3 server.py 4000
