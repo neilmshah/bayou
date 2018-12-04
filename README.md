@@ -22,7 +22,7 @@ http://www.scs.stanford.edu/17au-cs244b/sched/readings/bayou.pdf
 - termcolor
 
 #### Configs
-Check congig.yaml to see/set configuration for clients and severs
+Check config.yaml to see/set configuration for clients and severs
 
 #### Create proto files
  ```
@@ -31,9 +31,9 @@ Check congig.yaml to see/set configuration for clients and severs
  
  #### Start server nodes (one terminal per server)
  ```python
- python3 server.py 3000
- python3 server.py 4000
- python3 server.py 5000
+ python3 server.py one
+ python3 server.py two
+ python3 server.py three
  ```
  
  #### Start clients (one terminal per user)
