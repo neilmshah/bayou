@@ -8,6 +8,10 @@ http://www.scs.stanford.edu/17au-cs244b/sched/readings/bayou.pdf
 
 ## Learnings
 #### Neil Shah
+- Theoritical understanding turned practical implementation of replicated, eventually consistent storage system design.
+- Good grasp on conflict detection, resolution and replication consensus algorightms for distributed setups.
+- During presentation walked the class through the demo of a replicated eventually consistent meeting room booking example that was developed from scratch using gRPC, flask-restful and redis. 
+- Coded server side APIs for handling meeting requests, conflict detection and resolution. Solved multi-threaded resource management by using redis for storage. 
 
 #### Priyal Agarawal
 1. Understanding the concept of bayou system in detail.
