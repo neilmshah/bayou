@@ -29,7 +29,7 @@ http://www.scs.stanford.edu/17au-cs244b/sched/readings/bayou.pdf
 1. Learnt how to read research papers as this itself is a skill in my opionion :-)
 2. Learnt what Bayou is, how it works and how distributed concepts like eventual consistency,replication are achieved through Anti entropy, Primary server and write logs.
 3. By collaborating with the team, was able come up with an implementation for the prototype using REST and gRPC.
-4. I took up development of REST client ( and GET end point of REST server. REST client is a CLI utility used to make a room reservation and provide slots along with allows user to see the status of reservation. This was used in our demo.
+4. I took up development of REST client and GET end point of REST server. REST client is a CLI utility used to make a room reservation and provide slots along with allows user to see the status of reservation. This was used in our demo.
 
 
 ## Usage
