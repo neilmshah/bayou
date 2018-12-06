@@ -10,6 +10,12 @@ http://www.scs.stanford.edu/17au-cs244b/sched/readings/bayou.pdf
 #### Neil Shah
 
 #### Priyal Agarawal
+1. Understanding the concept of bayou system in detail.
+2. Deep understanding of the weakly consistent storage systems through hands-on experience.
+3. Worked on the bayou implementation specially the write commits and anti-entropy aspects of the prototype.
+4. During the presentation, discussed the need for write commit and how servers determine the stability of writes.
+5. Explained different approaches for write commitment along with their pros and cons.
+
 
 #### Shabari Girish Ganapathy
 1. Understanding and presenting the importance and usage of anit-entropy in Bayou system.
