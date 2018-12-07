@@ -22,8 +22,10 @@ http://www.scs.stanford.edu/17au-cs244b/sched/readings/bayou.pdf
 
 
 #### Shabari Girish Ganapathy
-1. Understanding and presenting the importance and usage of anit-entropy in Bayou system.
-2. Wrote the code for anti-entropy functions between servers using grpc and handling initial conflicts between servers.
+1. Understanding Bayou system and why it is useful in poorly connected networks.
+2. Researching areas where Bayou can be implemented even though our network connections have improved drastically.
+3. Wrote the code for anti-entropy functions between servers using grpc and handling initial conflicts between servers.
+4. During presentation, explained the example we have implemented in this repo and the concept and importance of Anti-entropy.
 
 #### Vishwanath Manvi
 1. Learnt how to read research papers as this itself is a skill in my opionion :-)
